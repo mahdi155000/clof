@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "storage.h"
 
 #define MAX_ITEMS 5
 #define MAX_STR   100
-
+/*
 typedef struct {
     int id;
     char title[MAX_STR];
@@ -14,9 +15,10 @@ typedef struct {
 
 Item M_L[MAX_ITEMS];
 int item_count = 0;
+*/ 
 
 // Sample data
-void load_items() {
+void load_defualt(void) {
     item_count = 3;
     M_L[0] = (Item){1, "Alpha", 5, "C_A", "First"};
     M_L[1] = (Item){2, "Bravo", 10, "C_B", "Second"};
@@ -35,7 +37,8 @@ void show_items() {
 
 int main(void) {
     char buf[20];
-    load_items();
+    load_items("data.bin");
+    if (item_count == 0) load_defualt();
     while (1) {
         show_items();
         printf("-> ");
@@ -60,5 +63,6 @@ int main(void) {
     }
 
     printf("Bye!\n");
+    save_items("data.bin");
     return 0;
 }
