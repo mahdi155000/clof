@@ -35,14 +35,18 @@ void load_default(void) {
 
 // Display items
 void show_items() {
-    printf("Number  Title     Val  Const  Comment\n");
+    printf("Hello world!\n");
+    printf("----------------------------------------------------------------------------------\n");
+
     for (int i = 0; i < item_count; i++) {
         Item *it = &M_L[i];
-        printf("%2d) %-8s %4d  %-6s  %s\n",
-               i + 1, it->title, it->value, it->constant, it->comment);
+        printf("%3d) %-65s | %4d\n", i + 1, it->title, it->value);
     }
+
+    printf("----------------------------------------------------------------------------------\n");
     printf("Enter N to +1, -N to -1, or type plugin command, Q to quit\n");
 }
+
 
 void load_plugins(const char *plugin_root) {
     DIR *dir = opendir(plugin_root);
