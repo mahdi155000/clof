@@ -1,6 +1,11 @@
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include "storage.h"
+#include <string.h>
+#include <dirent.h>
+#include <dlfcn.h>
+#include "plugins_manager.h"
 
 #define MAX_ITEMS 5
 #define MAX_STR   100
@@ -35,9 +40,46 @@ void show_items() {
     printf("Enter N to +1, -N to -1, Q to quit\n");
 }
 
+void load_plugins(const char *plugin_root) {
+    DIR *dir = opendir(plugin_root);
+    if (!dir) {
+        perror("opendir");
+        exit(1);
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (entry->d_type != DT_DIR || entry->d_name[0] == '.')
+            continue;
+
+        // Build path: plugins/plugin_name/plugin.so
+        char so_path[256];
+        snprintf(so_path, sizeof so_path, "%s/%s/plugin.so", plugin_root, entry->d_name);
+
+        void *handle = dlopen(so_path, RTLD_NOW);
+        if (!handle) {
+            fprintf(stderr, "Failed to load %s: %s\n", so_path, dlerror());
+            continue;
+        }
+
+        void (*plugin_register)(void) = dlsym(handle, "plugin_register");
+        if (!plugin_register) {
+            fprintf(stderr, "No plugin_register in %s\n", so_path);
+            dlclose(handle);
+            continue;
+        }
+
+        plugin_register();  // Let the plugin register itself
+    }
+
+    closedir(dir);
+}
+
+
 int main(void) {
     char buf[20];
     load_items("data.bin");
+    load_plugins("./plugins");
     if (item_count == 0) load_defualt();
     while (1) {
         show_items();

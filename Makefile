@@ -1,28 +1,38 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99
+CFLAGS = -Wall -Wextra -std=c99 -fPIC
+LDFLAGS = -ldl
 
 # Target executable
 TARGET = clof.out
 
-# Source files
-SRCS = main.c storage.c
+# Core source files
+CORE_SRCS = main.c storage.c plugins_manager.c
+CORE_OBJS = $(CORE_SRCS:.c=.o)
 
-# Object files
-OBJS = $(SRCS:.c=.o)
+# Find plugin source directories
+PLUGIN_DIRS := $(wildcard plugins/*)
+PLUGIN_SO := $(addsuffix /plugin.so, $(PLUGIN_DIRS))
 
 # Default target
-all: $(TARGET)
+all: $(TARGET) plugins
 
-# Link the program
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+# Link final executable
+$(TARGET): $(CORE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Compile .c files into .o files
+# Generic rule to build .o files from .c
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean build files
-clean:
-	rm -f $(OBJS) $(TARGET)
+# Build all plugins as .so
+plugins: $(PLUGIN_SO)
 
+# Compile each plugin .c to plugin.so inside its folder
+plugins/%/plugin.so: plugins/%/*.c plugins_manager.h
+	$(CC) $(CFLAGS) -shared -o $@ $<
+
+# Clean build artifacts
+clean:
+	rm -f $(CORE_OBJS) $(TARGET)
+	find plugins -name '*.so' -delete
