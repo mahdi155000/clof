@@ -3,6 +3,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -fPIC
 LDFLAGS = -ldl
 
+# Add -rdynamic for main executable linking
+LDFLAGS_EXE = $(LDFLAGS) -rdynamic
+
 # Target executable
 TARGET = clof.out
 
@@ -17,9 +20,9 @@ PLUGIN_SO := $(addsuffix /plugin.so, $(PLUGIN_DIRS))
 # Default target
 all: $(TARGET) plugins
 
-# Link final executable
+# Link final executable with -rdynamic
 $(TARGET): $(CORE_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS_EXE)
 
 # Generic rule to build .o files from .c
 %.o: %.c

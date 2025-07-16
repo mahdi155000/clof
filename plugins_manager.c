@@ -2,7 +2,12 @@
 #include <string.h>
 #include "plugins_manager.h"
 
-#define MAX_PLUGINS 20
+#define MAX_PLUGINS 100
+
+typedef struct {
+    const char *name;
+    plugin_func_t func;
+} Plugin;
 
 static Plugin plugins[MAX_PLUGINS];
 static int plugin_count = 0;
@@ -12,6 +17,7 @@ void register_plugin(const char *name, plugin_func_t func) {
         plugins[plugin_count].name = name;
         plugins[plugin_count].func = func;
         plugin_count++;
+        printf("Registered plugin: %s\n", name); // debug print
     }
 }
 
@@ -31,4 +37,3 @@ void list_plugins(void) {
         printf(" - %s\n", plugins[i].name);
     }
 }
-
