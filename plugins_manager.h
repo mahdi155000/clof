@@ -1,10 +1,17 @@
 #ifndef PLUGINS_MANAGER_H
 #define PLUGINS_MANAGER_H
 
-typedef void (*plugin_func_t)(void);
+#include "storage.h"  // ✅ this makes Item and MAX_ITEMS known
+
+typedef void (*plugin_func_t)(Item *M_L, int *item_count);
+
+typedef struct {
+    const char *name;
+    plugin_func_t func;
+} Plugin;
 
 void register_plugin(const char *name, plugin_func_t func);
-void run_plugin(const char *name);
-void list_plugins(void);
+void run_plugin(const char *name, Item *M_L, int *item_count);
 
 #endif
+

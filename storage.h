@@ -1,22 +1,22 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
-#include <stdio.h>
-
-#define MAX_ITEMS 10
+#define MAX_ITEMS 100
+#define MAX_STR 100
 
 typedef struct {
     int id;
-    char title[50];
+    char title[MAX_STR];
     int value;
-    char constant[50];
-    char comment[50];
+    char constant[MAX_STR];
+    char comment[MAX_STR];
 } Item;
 
-extern Item M_L[MAX_ITEMS];
-extern int item_count;
+extern Item M_L[MAX_ITEMS];      // <--- declare, not define
+extern int item_count;           // <--- declare, not define
 
 void save_items(const char *filename);
 void load_items(const char *filename);
 
-#endif // STORAGE_H
+#endif
+

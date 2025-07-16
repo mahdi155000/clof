@@ -7,9 +7,11 @@
 #include "storage.h"
 #include "plugins_manager.h"
 
-#define MAX_ITEMS 5
+#define MAX_ITEMS 1000
 #define MAX_STR   100
 
+//Item M_L[MAX_ITEMS];
+//int item_count = 0;
 /*
 typedef struct {
     int id;
@@ -142,7 +144,7 @@ int main(void) {
             printf("\n");
         } else {
             // Input was non-numeric → treat as plugin command
-            run_plugin(buf);
+            run_plugin(buf, M_L, &item_count);
         }
     }
 

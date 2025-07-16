@@ -1,4 +1,6 @@
 #include "storage.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 Item M_L[MAX_ITEMS];
 int item_count = 0;

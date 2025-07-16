@@ -4,10 +4,6 @@
 
 #define MAX_PLUGINS 100
 
-typedef struct {
-    const char *name;
-    plugin_func_t func;
-} Plugin;
 
 static Plugin plugins[MAX_PLUGINS];
 static int plugin_count = 0;
@@ -21,15 +17,16 @@ void register_plugin(const char *name, plugin_func_t func) {
     }
 }
 
-void run_plugin(const char *name) {
+void run_plugin(const char *name, Item *M_L, int *item_count) {
     for (int i = 0; i < plugin_count; i++) {
         if (strcmp(plugins[i].name, name) == 0) {
-            plugins[i].func();
+            plugins[i].func(M_L, item_count);  // ✅ fixed call
             return;
         }
     }
     printf("Plugin '%s' not found.\n", name);
 }
+
 
 void list_plugins(void) {
     printf("Available plugins:\n");
