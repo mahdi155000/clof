@@ -35,48 +35,15 @@ void load_default(void) {
 
 // Display items
 void show_items() {
-    printf("ID  Title     Val  Const  Comment\n");
+    printf("Number  Title     Val  Const  Comment\n");
     for (int i = 0; i < item_count; i++) {
         Item *it = &M_L[i];
         printf("%2d) %-8s %4d  %-6s  %s\n",
-               it->id, it->title, it->value, it->constant, it->comment);
+               i + 1, it->title, it->value, it->constant, it->comment);
     }
     printf("Enter N to +1, -N to -1, or type plugin command, Q to quit\n");
 }
 
-// Load plugins dynamically from folder
-// void load_plugins(const char *plugin_root) {
-//     DIR *dir = opendir(plugin_root);
-//     if (!dir) {
-//         perror("opendir");
-//         exit(EXIT_FAILURE);
-//     }
-
-//     struct dirent *entry;
-//     while ((entry = readdir(dir))) {
-//         if (entry->d_type != DT_DIR || entry->d_name[0] == '.')
-//             continue;
-
-//         char so_path[256];
-//         snprintf(so_path, sizeof so_path, "%s/%s/plugin.so", plugin_root, entry->d_name);
-
-//         void *handle = dlopen(so_path, RTLD_NOW);
-//         if (!handle) {
-//             fprintf(stderr, "Failed to load %s: %s\n", so_path, dlerror());
-//             continue;
-//         }
-
-//         void (*plugin_register)(void) = dlsym(handle, "plugin_register");
-//         if (!plugin_register) {
-//             fprintf(stderr, "No plugin_register in %s\n", so_path);
-//             dlclose(handle);
-//             continue;
-//         }
-
-//         plugin_register();  // Plugin self-registration
-//     }
-//     closedir(dir);
-// }
 void load_plugins(const char *plugin_root) {
     DIR *dir = opendir(plugin_root);
     if (!dir) {
