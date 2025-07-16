@@ -34,18 +34,18 @@ void load_default(void) {
 }
 
 // Display items
-void show_items() {
-    printf("Hello world!\n");
-    printf("----------------------------------------------------------------------------------\n");
+// void show_items() {
+//     printf("Hello world!\n");
+//     printf("----------------------------------------------------------------------------------\n");
 
-    for (int i = 0; i < item_count; i++) {
-        Item *it = &M_L[i];
-        printf("%3d) %-65s | %4d\n", i + 1, it->title, it->value);
-    }
+//     for (int i = 0; i < item_count; i++) {
+//         Item *it = &M_L[i];
+//         printf("%3d) %-65s | %4d\n", i + 1, it->title, it->value);
+//     }
 
-    printf("----------------------------------------------------------------------------------\n");
-    printf("Enter N to +1, -N to -1, or type plugin command, Q to quit\n");
-}
+//     printf("----------------------------------------------------------------------------------\n");
+//     printf("Enter N to +1, -N to -1, or type plugin command, Q to quit\n");
+// }
 
 
 void load_plugins(const char *plugin_root) {
@@ -63,7 +63,7 @@ void load_plugins(const char *plugin_root) {
         char so_path[256];
         snprintf(so_path, sizeof so_path, "%s/%s/plugin.so", plugin_root, entry->d_name);
 
-        printf("Loading plugin: %s\n", so_path);
+        // printf("Loading plugin: %s\n", so_path);
 
         void *handle = dlopen(so_path, RTLD_NOW);
         if (!handle) {
@@ -90,9 +90,11 @@ int main(void) {
     load_items("data.bin");
     load_plugins("./plugins");
     if (item_count == 0) load_default();
+    // Replace the show_items() with run_plugin
+    // show_items();
+    run_plugin("show", M_L, &item_count);
 
     while (1) {
-        show_items();
         printf("-> ");
 
         if (!fgets(buf, sizeof buf, stdin)) break;
