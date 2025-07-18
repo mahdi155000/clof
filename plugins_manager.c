@@ -62,3 +62,12 @@ void list_plugins(void) {
         printf(" - %s\n", plugins[i].name);
     }
 }
+
+int get_plugin_count(void) {
+    return plugin_count;
+}
+
+const Plugin *get_plugin(int idx) {
+    if (idx < 0 || idx >= plugin_count) return NULL;
+    return &plugins[idx];
+}
