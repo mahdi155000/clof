@@ -6,6 +6,8 @@
 #include <dlfcn.h>
 #include "storage.h"
 #include "plugins_manager.h"
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #define MAX_ITEMS 1000
 #define MAX_STR   100
@@ -83,6 +85,59 @@ void load_plugins(const char *plugin_root) {
     closedir(dir);
 }
 
+// --- Enhanced auto-completion logic for plugin commands and subcommands ---
+static char *plugin_command_generator(const char *text, int state) {
+    static int list_index = 0;
+    static int len = 0;
+    if (state == 0) {
+        list_index = 0;
+        len = strlen(text);
+    }
+    int count = get_plugin_count();
+    while (list_index < count) {
+        const Plugin *p = get_plugin(list_index++);
+        if (p && strncmp(p->name, text, len) == 0) {
+            return strdup(p->name);
+        }
+    }
+    return NULL;
+}
+
+// Subcommand completion for 'show' plugin
+static char *show_subcmd_generator(const char *text, int state) {
+    static int idx = 0;
+    static const char *subcmds[] = {"item", NULL};
+    if (state == 0) idx = 0;
+    // Only offer subcommands if none are already present
+    // Check if 'item' is already in the input
+    char *buf = rl_line_buffer;
+    if (strstr(buf, "item") != NULL) return NULL;
+    while (subcmds[idx]) {
+        if (strncmp(subcmds[idx], text, strlen(text)) == 0)
+            return strdup(subcmds[idx++]);
+        idx++;
+    }
+    return NULL;
+}
+
+static char **plugin_completion(const char *text, int start, int end) {
+    rl_attempted_completion_over = 1; // Prevent filename completion fallback
+    // Only complete the first word (the command)
+    if (start == 0) {
+        return rl_completion_matches(text, plugin_command_generator);
+    }
+    // Subcommand completion for 'show'
+    // Get the current input buffer
+    char *buf = rl_line_buffer;
+    // Extract the first word (command)
+    char cmd[64] = {0};
+    sscanf(buf, "%63s", cmd);
+    if (strcmp(cmd, "show") == 0 && start > 0) {
+        return rl_completion_matches(text, show_subcmd_generator);
+    }
+    // No completion for other plugins' arguments
+    return NULL;
+}
 
 int main(void) {
     char buf[64];  // increased buffer size for commands
@@ -94,31 +149,31 @@ int main(void) {
     // show_items();
     run_plugin("show", M_L, &item_count);
 
+    rl_attempted_completion_function = plugin_completion;
+
     while (1) {
-        printf("-> ");
-
-        if (!fgets(buf, sizeof buf, stdin)) break;
-        buf[strcspn(buf, "\n")] = 0;  // remove newline
-
-        if (buf[0] == 'q' || buf[0] == 'Q') break;
-
+        char *line = readline("-> ");
+        if (!line) break;
+        if (*line) add_history(line);
+        // Remove trailing newline if present
+        line[strcspn(line, "\n")] = 0;
+        if (line[0] == 'q' || line[0] == 'Q') { free(line); break; }
         // Check if input is numeric (with optional +/-)
         char *endptr;
-        long n = strtol(buf, &endptr, 10);
-
+        long n = strtol(line, &endptr, 10);
         if (*endptr == '\0') {
-            // Input was a number
             int idx = abs((int)n) - 1;
             if (idx < 0 || idx >= item_count) {
                 printf("Out of range\n\n");
+                free(line);
                 continue;
             }
             M_L[idx].value += (n > 0) ? 1 : -1;
             printf("\n");
         } else {
-            // Input was non-numeric → treat as plugin command
-            run_plugin(buf, M_L, &item_count);
+            run_plugin(line, M_L, &item_count);
         }
+        free(line);
     }
 
     printf("Bye!\n");

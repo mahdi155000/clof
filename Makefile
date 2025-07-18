@@ -1,7 +1,7 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -fPIC
-LDFLAGS = -ldl
+LDFLAGS = -ldl -lreadline
 
 # Add -rdynamic for main executable linking
 LDFLAGS_EXE = $(LDFLAGS) -rdynamic
