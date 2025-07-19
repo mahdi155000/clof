@@ -12,20 +12,6 @@
 #define MAX_ITEMS 1000
 #define MAX_STR   100
 
-//Item M_L[MAX_ITEMS];
-//int item_count = 0;
-/*
-typedef struct {
-    int id;
-    char title[MAX_STR];
-    int value;
-    char constant[MAX_STR];
-    char comment[MAX_STR];
-} Item;
-
-Item M_L[MAX_ITEMS];
-int item_count = 0;
-*/
 
 // Sample data loader if no saved data
 void load_default(void) {
@@ -34,20 +20,6 @@ void load_default(void) {
     M_L[1] = (Item){2, "Bravo", 10, "C_B", "Second"};
     M_L[2] = (Item){3, "Charlie", 15, "C_C", "Third"};
 }
-
-// Display items
-// void show_items() {
-//     printf("Hello world!\n");
-//     printf("----------------------------------------------------------------------------------\n");
-
-//     for (int i = 0; i < item_count; i++) {
-//         Item *it = &M_L[i];
-//         printf("%3d) %-65s | %4d\n", i + 1, it->title, it->value);
-//     }
-
-//     printf("----------------------------------------------------------------------------------\n");
-//     printf("Enter N to +1, -N to -1, or type plugin command, Q to quit\n");
-// }
 
 
 void load_plugins(const char *plugin_root) {
