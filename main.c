@@ -8,6 +8,7 @@
 #include "plugins_manager.h"
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <signal.h>
 
 #define MAX_ITEMS 1000
 #define MAX_STR   100
@@ -111,6 +112,14 @@ static char **plugin_completion(const char *text, int start, int end) {
     return NULL;
 }
 
+// Signal handler for Ctrl+C
+void handle_sigint(int sig) {
+    (void)sig;
+    printf("\nCaught Ctrl+C, saving data and exiting...\n");
+    save_items("data.bin");
+    exit(0);
+}
+
 int main(void) {
     char buf[64];  // increased buffer size for commands
 
@@ -122,6 +131,9 @@ int main(void) {
     run_plugin("show", M_L, &item_count);
 
     rl_attempted_completion_function = plugin_completion;
+
+    // Register signal handler for SIGINT (Ctrl+C)
+    signal(SIGINT, handle_sigint);
 
     while (1) {
         char *line = readline("-> ");
