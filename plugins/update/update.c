@@ -24,25 +24,34 @@ void plugin_update(int argc, char **argv, Item *M_L, int *item_count) {
         return;
     }
     Item *it = &M_L[idx];
-    printf("Enter title: ");
-    if (!fgets(it->title, MAX_STR, stdin)) return;
+
+    char buf[MAX_STR];
+
+    // Title
+    printf("Enter title [%s]: ", it->title);
+    if (fgets(buf, MAX_STR, stdin) && buf[0] != '\n')
+        strncpy(it->title, buf, MAX_STR);
     it->title[strcspn(it->title, "\n")] = 0;
-    printf("Enter value: ");
-    if (scanf("%d", &it->value) != 1) {
-        printf("Invalid value.\n");
-        while (getchar() != '\n');
-        return;
-    }
-    while (getchar() != '\n');
-    printf("Enter constant: ");
-    if (!fgets(it->constant, MAX_STR, stdin)) return;
+
+    // Value
+    printf("Enter value [%d]: ", it->value);
+    if (fgets(buf, MAX_STR, stdin) && buf[0] != '\n')
+        it->value = atoi(buf);
+
+    // Constant
+    printf("Enter constant [%s]: ", it->constant);
+    if (fgets(buf, MAX_STR, stdin) && buf[0] != '\n')
+        strncpy(it->constant, buf, MAX_STR);
     it->constant[strcspn(it->constant, "\n")] = 0;
-    printf("Enter comment: ");
-    if (!fgets(it->comment, MAX_STR, stdin)) return;
+
+    // Comment
+    printf("Enter comment [%s]: ", it->comment);
+    if (fgets(buf, MAX_STR, stdin) && buf[0] != '\n')
+        strncpy(it->comment, buf, MAX_STR);
     it->comment[strcspn(it->comment, "\n")] = 0;
+
     printf("Item updated.\n");
 }
-	
 
 // The plugin_register function called by dlopen in main program
 void plugin_register(void) {
