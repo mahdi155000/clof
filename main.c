@@ -5,6 +5,8 @@
 typedef struct { 
 	char title[100];
 	int watched;	// 0 for no and 1 for yes
+	int season;
+	int episode;
 } Movie;
 
 #define MAX_MOVIES 100
@@ -12,9 +14,11 @@ Movie movies[MAX_MOVIES];
 int movie_count =0;
 
 
-void add_movie(const char *title, int watched) {
+void add_movie(const char *title, int season, int episdoe, int watched) {
 	if (movie_count < MAX_MOVIES) {
 		strcpy(movies[movie_count].title, title);
+		movies[movie_count].season = season;
+		movies[movie_count].episode = episdoe;
 		movies[movie_count].watched = watched;
 		movie_count++;
 	} else {
@@ -29,10 +33,17 @@ void list_movies(){
 		return;
 	}
 
-	for (int i = 0;i  < movie_count; i++){
-		printf("%d: %s (watched: %d)\n", i+1, movies[i].title, movies[i].watched);
+	for (int i = 0; i < movie_count; i++){
+		if (movies[i].season > 0) {
+			printf("%d: %s S%02dE%02d (watched: %d)\n",
+			i + 1, movies[i].title,
+			movies[i].season, movies[i].episode,
+			movies[i].watched);
+		} else {
+			printf("%d: %s (watched: %d)\n",
+			i + 1, movies[i].title, movies[i].watched);
+		}
 	}
-
 }
 
 
@@ -63,9 +74,11 @@ void load_movies() {
 	}
 }
 
-int movie_exists(const char *title) {
+int movie_exists(const char *title, int season, int episode) {
 	for (int i = 0; i < movie_count; i++) {
-		if (strcmp(movies[i].title, title) == 0) {
+		if (strcmp(movies[i].title, title) == 0 && 
+			movies[i].season == season &&
+			movies[i].episode == episode) {
 			return 1; // movie found
 		}
 	}
@@ -86,6 +99,9 @@ void update_watched(const char *title, int watched){
 
 int main(int argc, char *argv[]) {
 	char new_title[100];
+	int season, episode, watched;
+	char watched_udpate[10];
+
 	load_movies();
 
 	while(1) {
@@ -97,13 +113,34 @@ int main(int argc, char *argv[]) {
 		break; // exit loop
 	}
 
-	if (movie_exists(new_title)) {
-		printf("Movie '%s' already exists!\n", new_title);
+	printf("Is this a series? (0 = No, i = Yes): ");
+	scanf("%d", &season);
+	getchar();	// consume leftover newline
+
+	if (season == 1) {
+		// Series: Ask for season and episode
+		printf("Enter season number: ");
+		scanf("%d", &season);
+		printf("Enter episode number: ");
+		scanf("%d", &episode);
+		getchar();
 	} else {
-		add_movie(new_title, 0);
-		printf("New movie detected: '%s'\n", new_title);
+		season = 0;
+		episode = 0;
 	}
 
+	if (movie_exists(new_title, season, episode)) {
+		printf("Movie '%s' already exists!\n", new_title);
+		continue;
+	}
+	
+	// Ask watched status
+	printf("Have you watched it? (0 = No, 1 = Yes): ");
+	scanf("%d", &watched);
+	getchar();
+
+	add_movie(new_title,season,episode,watched);
+	printf("Added '%s'\n", new_title);
 	list_movies();
 
 	save_movies();
