@@ -85,46 +85,23 @@ void update_watched(const char *title, int watched){
 }
 
 int main(int argc, char *argv[]) {
-	char title[100];
-	int watched;
-	char watch_update[10];
-
-
-	printf("clof started\n");
-
+	char new_title[100];
 	load_movies();
 
-//    add_movie("Breaking bad S01E01", 0);
-//    add_movie("Super Natural S01E01", 1);
-	printf("Enter movie title: ");
-	fgets(title, sizeof(title), stdin);
-	title[strcspn(title, "\n")] = 0;
+	while(1) {
+		printf("Enter new movie title (or 'quit' to exit): ");
+		fgets(new_title, sizeof(new_title), stdin);
+		new_title[strcspn(new_title, "\n")] == 0; //remove newline
 
-	if (movie_exists(title)) {
-		printf("Movie '%s' already exists!\n", title);
-	} else {
-
-		printf("Have you watched it? (0 = No, 1 = Yes): ");
-		scanf("%d" ,&watched);
-		getchar();
-
-		add_movie(title, watched);
+	if (strcmp(new_title, "quit") == 0) {
+		break; // exit loop
 	}
 
-	printf("\nDo you want to update a movie? (yes/no): ");
-	fgets(watch_update, sizeof(watch_update), stdin);
-	watch_update[strcspn(watch_update, "\n")] = 0;
-
-	if (strcmp(watch_update, "yes") == 0) {
-		printf("Enter movie title to update: ");
-		fgets(title, sizeof(title), stdin);
-		title[strcspn(title, "\n")] = 0;
-
-		printf("New watched status (0 = Nom, 1 = Yes): ");
-		scanf("%d", &watched);
-		getchar(); // consume leftover newline
-
-		update_watched(title, watched);
+	if (movie_exists(new_title)) {
+		printf("Movie '%s' already exists!\n", new_title);
+	} else {
+		add_movie(new_title, 0);
+		printf("New movie detected: '%s'\n", new_title);
 	}
 
 	list_movies();
@@ -132,5 +109,6 @@ int main(int argc, char *argv[]) {
 	save_movies();
 
 	return 0;
+	}
 }
 
