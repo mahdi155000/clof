@@ -4,9 +4,10 @@
 
 typedef struct { 
 	char title[100];
-	int watched;	// 0 for no and 1 for yes
+	int is_series;	// 0 = movie, 1 = series
 	int season;
 	int episode;
+	int watched;	// 0 for no and 1 for yes
 } Movie;
 
 #define MAX_MOVIES 100
@@ -14,15 +15,31 @@ Movie movies[MAX_MOVIES];
 int movie_count =0;
 
 
-void add_movie(const char *title, int season, int episdoe, int watched) {
-	if (movie_count < MAX_MOVIES) {
-		strcpy(movies[movie_count].title, title);
-		movies[movie_count].season = season;
-		movies[movie_count].episode = episdoe;
-		movies[movie_count].watched = watched;
-		movie_count++;
+void add_movie(const char *title, int is_series, int season, int episode, int watched) {
+	if (movie_count >= MAX_MOVIES) {
+		printf("Database full!\n");
+		return;
+	}
+	strcpy(movies[movie_count].title, title);
+	movies[movie_count].is_series = is_series;
+	movies[movie_count].season = season;
+	movies[movie_count].episode = episode;
+	movies[movie_count].watched = watched;
+	movie_count++;
+}
+
+void mark_watched(int index) {
+	if (movies[index].is_series) {
+		movies[index].episode += 1;
+		movies[index].watched = 0;
+
+		printf("Nedxt episode: %s S%02dE%02d\n",
+			movies[index].title,
+			movies[index].season,
+			movies[index].episode);
 	} else {
-		printf("Movie database full!\n");
+		movies[index].watched = 1;
+		printf("Movie '%s' marked as watched.\n", movies[index].title);
 	}
 }
 
@@ -74,15 +91,13 @@ void load_movies() {
 	}
 }
 
-int movie_exists(const char *title, int season, int episode) {
+int movie_exists(const char *title) {
 	for (int i = 0; i < movie_count; i++) {
-		if (strcmp(movies[i].title, title) == 0 && 
-			movies[i].season == season &&
-			movies[i].episode == episode) {
-			return 1; // movie found
+		if (strcmp(movies[i].title, title) == 0 ) {
+			return i; // movie found
 		}
 	}
-	return 0; // movie not found
+	return -1; // movie not found
 }
 
 // Update the watched status of a movie
@@ -112,75 +127,58 @@ void show_menu() {
 
 
 void add_movie_interactive() {
-	char title[100];
-	int is_series;
-	int season = 0;
-	int episode = 0;
-	int watched;
+    char title[100];
+    int is_series;
+    int season = 0;
+    int episode = 0;
 
-	printf("Enter title: ");
-	fgets(title, sizeof(title), stdin);
-	title[strcspn(title, "\n")] = 0;
+    printf("Enter title: ");
+    fgets(title, sizeof(title), stdin);
+    title[strcspn(title, "\n")] = 0;
 
-	printf("Is this a series? (0 = No ,1 = Yes): ");
-	scanf("%d", &is_series);
-	getchar(); // consume newline
+    if (movie_exists(title) != -1) {
+        printf("Title already exists.\n");
+        return;
+    }
 
-	if ( is_series == 1) {
-		printf("Enter season number: ");
-		scanf("%d", &season);
+    printf("Is this a series? (0 = No, 1 = Yes): ");
+    scanf("%d", &is_series);
+    getchar();
 
-		printf("Enter episode number: ");
-		scanf("%d", &episode);
-		getchar();
-	}
+    if (is_series == 1) {
+        printf("Enter starting season: ");
+        scanf("%d", &season);
 
-	if (movie_exists(title,season,episode)) {
-		printf("This movie/episode is already exists!\n");
-		return;
-	}
+        printf("Enter starting episode: ");
+        scanf("%d", &episode);
+        getchar();
+    }
 
-	printf("Have you watched it? (0 = No, 1 = Yes)");
-	scanf("%d", &watched);
-	getchar();
-
-	add_movie(title,season,episode,watched);
-	printf("Movie added successfuly.\n");
+    add_movie(title, is_series, season, episode, 0);
+    printf("Title added successfully.\n");
 }
 
 void update_movie_interactive() {
 	char title[100];
-	int season;
-	int episode;
-	int watched;
+	int index;
 
 	printf("Enter title to update: ");
 	fgets(title, sizeof(title), stdin);
 	title[strcspn(title, "\n")] = 0;
 
-	printf("Enter season number (0 if movie): ");
-	scanf("%d", &season);
+	index = movie_exists(title);
 
-	printf("Enter episode number (0 if movie): ");
-	scanf("%d", &episode);
-	getchar();
-
-	if (!movie_exists(title,season,episode)) {
-		printf("Movie/episode not found!\n");
+	if (index == -1){
+		printf("Title not found.\n");
 		return;
 	}
 
-	printf("Enter new watched status (0 = No, 1 = Yes): ");
-	scanf("%d", &watched);
-	getchar();
-
-
-	update_watched(title,season,episode,watched);
+	mark_watched(index);
 
 
 }
 
-int main(int argc, char *argv[]) {
+int main() {
 	int choice;
 
 	printf("Welcome to clof\n");
