@@ -72,9 +72,23 @@ int movie_exists(const char *title) {
 	return 0; // movie not found
 }
 
+// Update the watched status of a movie
+void update_watched(const char *title, int watched){
+	for (int i = 0; i < movie_count; i++){
+		if (strcmp(movies[i].title, title) == 0) {
+			movies[i].watched = watched;
+			printf("Updated '%s' to watched = %d\n", title, watched);
+			return; // stop searching after update
+		}
+	}
+	printf("Movie '%s' not found\n", title); 
+}
+
 int main(int argc, char *argv[]) {
 	char title[100];
 	int watched;
+	char watch_update[10];
+
 
 	printf("clof started\n");
 
@@ -95,6 +109,22 @@ int main(int argc, char *argv[]) {
 		getchar();
 
 		add_movie(title, watched);
+	}
+
+	printf("\nDo you want to update a movie? (yes/no): ");
+	fgets(watch_update, sizeof(watch_update), stdin);
+	watch_update[strcspn(watch_update, "\n")] = 0;
+
+	if (strcmp(watch_update, "yes") == 0) {
+		printf("Enter movie title to update: ");
+		fgets(title, sizeof(title), stdin);
+		title[strcspn(title, "\n")] = 0;
+
+		printf("New watched status (0 = Nom, 1 = Yes): ");
+		scanf("%d", &watched);
+		getchar(); // consume leftover newline
+
+		update_watched(title, watched);
 	}
 
 	list_movies();
