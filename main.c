@@ -63,6 +63,15 @@ void load_movies() {
 	}
 }
 
+int movie_exists(const char *title) {
+	for (int i = 0; i < movie_count; i++) {
+		if (strcmp(movies[i].title, title) == 0) {
+			return 1; // movie found
+		}
+	}
+	return 0; // movie not found
+}
+
 int main(int argc, char *argv[]) {
 	char title[100];
 	int watched;
@@ -77,11 +86,16 @@ int main(int argc, char *argv[]) {
 	fgets(title, sizeof(title), stdin);
 	title[strcspn(title, "\n")] = 0;
 
-	printf("Have you watched it? (0 = No, 1 = Yes): ");
-	scanf("%d" ,&watched);
-	getchar();
+	if (movie_exists(title)) {
+		printf("Movie '%s' already exists!\n", title);
+	} else {
 
-	add_movie(title, watched);
+		printf("Have you watched it? (0 = No, 1 = Yes): ");
+		scanf("%d" ,&watched);
+		getchar();
+
+		add_movie(title, watched);
+	}
 
 	list_movies();
 

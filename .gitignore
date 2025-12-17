@@ -15,7 +15,6 @@
 # Precompiled Headers
 *.gch
 *.pch
-
 # Libraries
 *.lib
 *.a
@@ -58,3 +57,4 @@ dkms.conf
 # Mahdi Added
 clof
 *.dat*
+movies.dat
