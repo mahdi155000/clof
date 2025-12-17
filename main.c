@@ -35,11 +35,41 @@ void list_movies(){
 
 }
 
+
+void save_movies(){
+	FILE *file = fopen("movies.dat", "wb");
+	if (file != NULL) {
+		fwrite(&movie_count, sizeof(int), 1, file);
+		fwrite(movies, sizeof(Movie), movie_count, file);
+		fclose(file);
+		printf("Movies saved to file.\n");
+	} else
+	{
+		printf("Error saving movies.\n");
+	}
+	
+}
+
+
+void load_movies() {
+	FILE *file = fopen("movies.dat", "rb");
+	if (file != NULL) {
+		fread(&movie_count, sizeof(int), 1, file);
+		fread(movies, sizeof(Movie), movie_count, file);
+		fclose(file);
+		printf("Movies loaded from file.\n");
+	} else {
+		printf("No saved movies found.\n");
+	}
+}
+
 int main(int argc, char *argv[]) {
 	char title[100];
 	int watched;
 
 	printf("clof started\n");
+
+	load_movies();
 
 //    add_movie("Breaking bad S01E01", 0);
 //    add_movie("Super Natural S01E01", 1);
@@ -54,6 +84,8 @@ int main(int argc, char *argv[]) {
 	add_movie(title, watched);
 
 	list_movies();
+
+	save_movies();
 
 	return 0;
 }
