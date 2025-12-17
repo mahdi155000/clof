@@ -45,24 +45,20 @@ void mark_watched(int index) {
 
 
 void list_movies(){
-	if (movie_count == 0) {
-		printf("Ther is no movies in database.\n");
-		return;
-	}
+	printf("\n====== LOF =======\n");
 
-	for (int i = 0; i < movie_count; i++){
-		if (movies[i].season > 0) {
-			printf("%d: %s S%02dE%02d (watched: %d)\n",
-			i + 1, movies[i].title,
-			movies[i].season, movies[i].episode,
-			movies[i].watched);
+	for (int i =0; i < movie_count; i++){
+		if (movies[i].is_series) {
+			printf("%2d) %-25s	S%02dE%02d\n", i + 1,
+				movies[i].title,
+				movies[i].season,
+				movies[i].episode);
 		} else {
-			printf("%d: %s (watched: %d)\n",
-			i + 1, movies[i].title, movies[i].watched);
+			printf("%2d) %-25s	(movie)\n", i + 1, movies[i].title);
 		}
 	}
+	printf("=====================\n");
 }
-
 
 void save_movies(){
 	FILE *file = fopen("movies.dat", "wb");
@@ -178,36 +174,57 @@ void update_movie_interactive() {
 
 }
 
-int main() {
-	int choice;
+void apply_lof_input(int input) {
+	int index = abs(input) -1;
 
-	printf("Welcome to clof\n");
+	if (index < 0 || index >= movie_count) {
+		printf("Invalid input.\n");
+		return;
+	}
+
+	if (!movies[index].is_series) {
+		printf("'%s' is a movie not a series.\n", movies[index].title);
+		return;
+	}
+
+	if (input > 0) {
+		// plus -> next episode
+		movies[index].episode++;
+		printf("-> %s S%02dE%02d\n",
+			movies[index].title,
+			movies[index].season,
+			movies[index].episode);
+	} else {
+		printf("Already at first episode.\n");
+	}
+}
+
+int main() {
+	int input;
+
+	// printf("Welcome to clof\n");
 
 	load_movies();
 
 	while (1) {
-		show_menu();
+		// show_menu();
+		list_movies();
 
-		scanf("%d", &choice);
-		getchar(); // consume newline
+		printf("Input (+N / -N / 0 / q): ");
 
-		if (choice == 1) {
-			add_movie_interactive();
+		if (scanf("%d", &input) != 1) {
+			break;	// non-number (q)
 		}
-		else if ( choice == 2 ) {
-			list_movies();
+
+		getchar();
+
+		if (input == 0) {
+			continue;
 		}
-		else if ( choice == 3 ) {
-			update_movie_interactive();
-		}
-		else if ( choice == 4 ) {
-			save_movies();
-			printf("Goodbye!\n");
-			break;
-		}
-		else {
-			printf("Invalid option!\n");
-		}
+
+		apply_lof_input(input);
+		save_movies();
 	}
+	printf("goodbye.\n");
 	return 0;
 }
