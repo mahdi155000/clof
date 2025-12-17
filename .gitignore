@@ -57,3 +57,4 @@ dkms.conf
 
 # Mahdi Added
 clof
+*.dat*
