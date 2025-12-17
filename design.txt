@@ -1,0 +1,8 @@
+MODULES (logical, not files):
+
+- argument parsing
+- file reading
+- core logic
+- output
+- error handling
+
