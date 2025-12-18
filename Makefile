@@ -3,13 +3,16 @@ CFLAGS = -Wall -g
 
 SRC = \
 	main.c \
+	plugins/tui.c \
 	movie.c \
 	plugins/plugins.c \
+	plugins/lof.c \
 	plugins/list.c \
 	plugins/add.c \
 	plugins/update.c \
 	plugins/remove.c \
 	plugins/help.c
+
 
 OBJ = $(SRC:.c=.o)
 
@@ -18,7 +21,7 @@ TARGET = clof
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncurses
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
