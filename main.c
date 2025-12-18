@@ -3,8 +3,6 @@
 #include "plugin.h"
 #include "movie.h"
 
-Movie movies[MAX_MOVIES];
-int movie_count = 0;
 
 
 void load_movies(void) {
@@ -64,7 +62,7 @@ int main(void) {
 		
 		cmd[strcspn(cmd, "\n")]  = 0;
 
-		if (strcspn(cmd, "quit") == 0)
+		if (strcmp(cmd, "quit") == 0)
 			break;
 
 		int found = 0;

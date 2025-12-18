@@ -1,30 +1,27 @@
-# Compiler
 CC = gcc
-
-# Compiler flags
 CFLAGS = -Wall -g
 
-# Source files
-SRC = main.c
+SRC = \
+	main.c \
+	movie.c \
+	plugins/plugins.c \
+	plugins/list.c \
+	plugins/add.c \
+	plugins/update.c \
+	plugins/remove.c \
+	plugins/help.c
 
-# Object files (auto-generated from SRC)
 OBJ = $(SRC:.c=.o)
 
-# Output executable
 TARGET = clof
 
-# Default target
 all: $(TARGET)
 
-# How to build the executable
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $(OBJ)
 
-# How to compile .c files into .o
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean up compiled files
 clean:
 	rm -f $(OBJ) $(TARGET)
-
