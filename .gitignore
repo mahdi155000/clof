@@ -57,4 +57,4 @@ dkms.conf
 # Mahdi Added
 clof
 *.dat*
-movies.dat
+movies.db
