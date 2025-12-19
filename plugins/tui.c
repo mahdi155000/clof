@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "../movie.h"
 
 /* =========================================================
@@ -12,7 +13,7 @@ typedef enum {
     ACTION_EDIT,
     ACTION_TAGS,
     ACTION_CANCEL,
-    ACTION_COUNT          /* MUST be last */
+    ACTION_COUNT
 } ActionType;
 
 static const char *action_items[ACTION_COUNT] = {
@@ -24,14 +25,28 @@ static const char *action_items[ACTION_COUNT] = {
 };
 
 /* =========================================================
- * Draw main LOF screen
+ * Input modes
  * ========================================================= */
 
-static void draw_lof_screen(int selected, const char *status) {
+typedef enum {
+    MODE_NORMAL,
+    MODE_NUMBER
+} InputMode;
+
+/* =========================================================
+ * Draw screen
+ * ========================================================= */
+
+static void draw_lof_screen(int selected,
+                            const char *status,
+                            const char *numbuf,
+                            InputMode mode)
+{
     clear();
 
     mvprintw(0, 0, "clof (ncurses)");
-    mvprintw(1, 0, "↑ ↓ move | ENTER menu | q quit");
+    mvprintw(1, 0,
+             "↑ ↓ move | ENTER menu | n number-mode | q quit");
 
     int row = 3;
 
@@ -59,18 +74,23 @@ static void draw_lof_screen(int selected, const char *status) {
         row++;
     }
 
-    /* status bar */
     int maxy, maxx;
     getmaxyx(stdscr, maxy, maxx);
 
-    mvhline(maxy - 2, 0, '-', maxx);
+    mvhline(maxy - 3, 0, '-', maxx);
+
+    if (mode == MODE_NUMBER)
+        mvprintw(maxy - 2, 0, "NUMBER MODE: %s", numbuf);
+    else
+        mvprintw(maxy - 2, 0, "MODE: NORMAL");
+
     mvprintw(maxy - 1, 0, "%s", status);
 
     refresh();
 }
 
 /* =========================================================
- * Action menu (modal)
+ * Action menu (unchanged)
  * ========================================================= */
 
 static ActionType action_menu(void) {
@@ -100,14 +120,14 @@ static ActionType action_menu(void) {
         wrefresh(win);
         ch = wgetch(win);
 
-        if (ch == KEY_UP && choice > 0) {
+        if (ch == KEY_UP && choice > 0)
             choice--;
-        } else if (ch == KEY_DOWN && choice < ACTION_COUNT - 1) {
+        else if (ch == KEY_DOWN && choice < ACTION_COUNT - 1)
             choice++;
-        } else if (ch == '\n' || ch == KEY_ENTER) {
+        else if (ch == '\n' || ch == KEY_ENTER) {
             delwin(win);
             return (ActionType)choice;
-        } else if (ch == 27 || ch == 'q') {   /* ESC or q */
+        } else if (ch == 27 || ch == 'q') {
             delwin(win);
             return ACTION_CANCEL;
         }
@@ -115,35 +135,19 @@ static ActionType action_menu(void) {
 }
 
 /* =========================================================
- * ENTER key handler (dispatch only)
+ * ENTER handler (normal mode)
  * ========================================================= */
 
 static void handle_enter(int selected, char *status, int len) {
-    if (selected < 0 || selected >= movie_count) {
-        snprintf(status, len, "Invalid selection");
-        return;
-    }
-
     ActionType action = action_menu();
 
     switch (action) {
     case ACTION_ADVANCE:
-        snprintf(status, len, "Advance selected (not implemented)");
+        snprintf(status, len, "Advance selected");
         break;
-
     case ACTION_INFO:
         snprintf(status, len, "Title: %s", movies[selected].title);
         break;
-
-    case ACTION_EDIT:
-        snprintf(status, len, "Edit selected");
-        break;
-
-    case ACTION_TAGS:
-        snprintf(status, len, "Tags selected");
-        break;
-
-    case ACTION_CANCEL:
     default:
         snprintf(status, len, "Canceled");
         break;
@@ -151,15 +155,19 @@ static void handle_enter(int selected, char *status, int len) {
 }
 
 /* =========================================================
- * Plugin entry point
+ * Plugin entry
  * ========================================================= */
 
 void plugin_tui(void) {
     int ch;
     int selected = 0;
-    char status[80] = "";
 
-    /* initialize ncurses */
+    InputMode mode = MODE_NORMAL;
+
+    char status[80] = "";
+    char numbuf[8]  = "";
+    int  numlen     = 0;
+
     initscr();
     cbreak();
     noecho();
@@ -167,9 +175,62 @@ void plugin_tui(void) {
     curs_set(0);
 
     while (1) {
-        draw_lof_screen(selected, status);
+        draw_lof_screen(selected, status, numbuf, mode);
         ch = getch();
 
+        /* ================= NUMBER MODE ================= */
+        if (mode == MODE_NUMBER) {
+
+            if ((ch >= '0' && ch <= '9') ||
+                (ch == '-' && numlen == 0)) {
+
+                if (numlen < (int)sizeof(numbuf) - 1) {
+                    numbuf[numlen++] = ch;
+                    numbuf[numlen] = '\0';
+                }
+
+            } else if (ch == '\n' || ch == KEY_ENTER) {
+
+                int value = atoi(numbuf);
+                int index = abs(value) - 1;
+
+                if (value == 0) {
+                    snprintf(status, sizeof(status), "Invalid number");
+                } else if (index < 0 || index >= movie_count) {
+                    snprintf(status, sizeof(status), "Out of range");
+                } else {
+                    selected = index;
+
+                    if (value > 0) {
+                        next_episode(index);
+                        snprintf(status, sizeof(status),
+                                 "Advanced: %s",
+                                 movies[index].title);
+                    } else {
+                        prev_episode(index);
+                        snprintf(status, sizeof(status),
+                                 "Reverted: %s",
+                                 movies[index].title);
+                    }
+
+                    save_movies();
+                }
+
+                numbuf[0] = '\0';
+                numlen = 0;
+                mode = MODE_NORMAL;
+
+            } else if (ch == 27) {   /* ESC */
+                numbuf[0] = '\0';
+                numlen = 0;
+                mode = MODE_NORMAL;
+                snprintf(status, sizeof(status), "Number mode canceled");
+            }
+
+            continue;
+        }
+
+        /* ================= NORMAL MODE ================= */
         if (ch == 'q') {
             break;
         } else if (ch == KEY_UP && selected > 0) {
@@ -178,9 +239,13 @@ void plugin_tui(void) {
             selected++;
         } else if (ch == '\n' || ch == KEY_ENTER) {
             handle_enter(selected, status, sizeof(status));
+        } else if (ch == 'n') {
+            mode = MODE_NUMBER;
+            numbuf[0] = '\0';
+            numlen = 0;
+            snprintf(status, sizeof(status), "Number mode");
         }
     }
 
-    /* restore terminal */
     endwin();
 }
