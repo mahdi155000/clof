@@ -20,17 +20,45 @@ typedef enum {
  * ========================================================= */
 
 typedef enum {
-    ACTION_ADVANCE,
+    ACTION_Add,
     ACTION_INFO,
     ACTION_CANCEL,
     ACTION_COUNT
 } Action;
 
 static const char *action_items[ACTION_COUNT] = {
-    "Advance episode",
+    "Add episode",
     "Show info",
     "Cancel"
 };
+
+typedef enum {
+    SERIES_Add,
+    SERIES_INFO,
+    SERIES_CANCEL,
+    SERIES_ACTION_COUNT
+} SeriesAction;
+
+typedef enum {
+    MOVIE_MARK_WATCHED,
+    MOVIE_INFO,
+    MOVIE_CANCEL,
+    MOVIE_ACTION_COUNT
+} MovieAction;
+
+
+static const char *series_action_items[SERIES_ACTION_COUNT] = {
+    "Add episode",
+    "Show info",
+    "Cancel"
+};
+
+static const char *movie_action_items[MOVIE_ACTION_COUNT] = {
+    "Mark watched",
+    "Show info",
+    "Cancel"
+};
+
 
 /* =========================================================
  * Drawing
@@ -45,7 +73,7 @@ static void draw_screen(int selected,
 
     mvprintw(0, 0, "clof (ncurses)");
     mvprintw(1, 0,
-        "↑↓ move | ENTER menu | n number | : command | q quit");
+        "up/down arrow move | ENTER menu | n number | : command | q quit");
 
     int row = 3;
 
@@ -94,24 +122,24 @@ static void draw_screen(int selected,
  * Action menu
  * ========================================================= */
 
-static Action action_menu(void)
+ static int generic_menu(const char **items, int count)
 {
     int choice = 0;
     int ch;
 
-    WINDOW *win = newwin(ACTION_COUNT + 2, 30,
-                         (LINES - 6) / 2,
-                         (COLS - 30) / 2);
+    WINDOW *win = newwin(count + 2, 32,
+                         (LINES - count - 2) / 2,
+                         (COLS - 32) / 2);
 
     box(win, 0, 0);
     keypad(win, TRUE);
 
     while (1) {
-        for (int i = 0; i < ACTION_COUNT; i++) {
+        for (int i = 0; i < count; i++) {
             if (i == choice)
                 wattron(win, A_REVERSE);
 
-            mvwprintw(win, i + 1, 2, "%s", action_items[i]);
+            mvwprintw(win, i + 1, 2, "%s", items[i]);
 
             if (i == choice)
                 wattroff(win, A_REVERSE);
@@ -122,14 +150,15 @@ static Action action_menu(void)
 
         if (ch == KEY_UP && choice > 0)
             choice--;
-        else if (ch == KEY_DOWN && choice < ACTION_COUNT - 1)
+        else if (ch == KEY_DOWN && choice < count - 1)
             choice++;
         else if (ch == '\n' || ch == KEY_ENTER) {
             delwin(win);
-            return (Action)choice;
-        } else if (ch == 27) {
+            return choice;
+        }
+        else if (ch == 27) { /* ESC */
             delwin(win);
-            return ACTION_CANCEL;
+            return count - 1; /* cancel */
         }
     }
 }
@@ -289,21 +318,45 @@ void plugin_tui(void)
             input[0] = '\0';
         }
         else if (ch == '\n' || ch == KEY_ENTER) {
-            Action a = action_menu();
 
-            if (a == ACTION_ADVANCE) {
-                next_episode(selected);
+    if (movies[selected].is_series) {
+        int a = generic_menu(
+            series_action_items,
+            SERIES_ACTION_COUNT
+        );
+
+        if (a == SERIES_Add) {
+            next_episode(selected);
+            save_movies();
+            snprintf(status, sizeof(status), "Episode Addd");
+        }
+        else if (a == SERIES_INFO) {
+            snprintf(status, sizeof(status),
+                "%s S%02dE%02d",
+                movies[selected].title,
+                movies[selected].season,
+                movies[selected].episode);
+        }
+    }
+        else {
+            int a = generic_menu(
+                movie_action_items,
+                MOVIE_ACTION_COUNT
+            );
+
+            if (a == MOVIE_MARK_WATCHED) {
+                movies[selected].episode = 1; /* example */
                 save_movies();
-                snprintf(status, sizeof(status), "Advanced");
+                snprintf(status, sizeof(status), "Marked watched");
             }
-            else if (a == ACTION_INFO) {
+            else if (a == MOVIE_INFO) {
                 snprintf(status, sizeof(status),
-                    "%s S%02dE%02d",
-                    movies[selected].title,
-                    movies[selected].season,
-                    movies[selected].episode);
+                    "%s (movie)",
+                    movies[selected].title);
             }
         }
+    }
+
     }
 
     endwin();
