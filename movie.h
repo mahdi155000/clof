@@ -5,11 +5,13 @@
 //  ----- constants -------
 #define MAX_MOVIES 1000
 #define TITLE_LEN 100
+#define GENRE_LEN 50
 
 //  ----- data structures ------
-typedef struct 
+typedef struct
 {
     char title[TITLE_LEN];
+    char genre[GENRE_LEN];
 
     int is_series;
     int season;
@@ -33,5 +35,8 @@ void remove_movie(int index);
 // progress controll
 void next_episode(int index);
 void prev_episode(int index);
+
+// genre management
+void set_movie_genre(int index, const char *genre);
 
 #endif

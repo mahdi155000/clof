@@ -46,6 +46,8 @@ void add_movie(const char *title, int is_series, int season, int episode) {
     strncpy(movies[movie_count].title, title, TITLE_LEN - 1);
     movies[movie_count].title[TITLE_LEN - 1] = '\0';
 
+    strcpy(movies[movie_count].genre, "");
+
     movies[movie_count].is_series = is_series;
     movies[movie_count].season = season;
     movies[movie_count].episode = episode;
