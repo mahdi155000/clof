@@ -11,7 +11,8 @@ SRC = \
 	plugins/add.c \
 	plugins/update.c \
 	plugins/remove.c \
-	plugins/help.c
+	plugins/help.c \
+	plugins/search.c
 
 
 OBJ = $(SRC:.c=.o)

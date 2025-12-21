@@ -8,6 +8,7 @@ void plugin_add(void);
 void plugin_update(void);
 void plugin_remove(void);
 void plugin_help(void);
+void plugin_search(void);
 
 Plugin plugins[] = {
     { "lof",    "Numeric LOF mode", plugin_lof },
@@ -17,6 +18,7 @@ Plugin plugins[] = {
     { "update", "Update progress",  plugin_update },
     { "remove", "Remove entry",     plugin_remove},
     {"help",    "Show help",        plugin_help},
+    {"search",  "Search movies by title", plugin_search},
 
 };
 

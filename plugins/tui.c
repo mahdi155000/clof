@@ -26,12 +26,6 @@ typedef enum {
     ACTION_COUNT
 } Action;
 
-static const char *action_items[ACTION_COUNT] = {
-    "Add episode",
-    "Show info",
-    "Cancel"
-};
-
 typedef enum {
     SERIES_Add,
     SERIES_INFO,
@@ -192,6 +186,10 @@ static void execute_command(const char *cmd, char *status, int len)
     else if (strcmp(cmd, "list") == 0) {
         plugin_list();
         snprintf(status, len, "list");
+    }
+    else if (strcmp(cmd, "search") == 0) {
+        plugin_search();
+        snprintf(status, len, "search done");
     }
     else {
         snprintf(status, len, "Unknown command: %s", cmd);

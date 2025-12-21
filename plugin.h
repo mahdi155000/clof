@@ -27,6 +27,7 @@ void plugin_update(void);
 void plugin_remove(void);
 void plugin_help(void);
 void plugin_tui(void);
+void plugin_search(void);
 
 /* =====================================================
  * Plugin registry (defined in plugins.c)
