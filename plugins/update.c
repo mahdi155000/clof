@@ -16,11 +16,11 @@ void plugin_update(void) {
 
     index = abs(input) - 1;
 
-    if (index < 0 || index >= movie_count) {
-        printf("Invalid index.]n");
-        return;
-    }
-
+    if (scanf("%d", &input) != 1) {
+        printf("Invalid input. Please enter a number.\n");
+        while (getchar() != '\n');  // Clear stdin
+            return;
+}
     if (!movies[index].is_series) {
         printf("Not a series.\n");
         return;
