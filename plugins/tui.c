@@ -21,8 +21,9 @@ typedef enum {
 
 typedef enum {
     SERIES_Add,
-    SERIES_INFO,
-    SERIES_CANCEL,
+    SERIES_Remove,
+    SERIES_UpdateInfo,
+    SERIES_Cancel,
     SERIES_ACTION_COUNT
 } SeriesAction;
 
@@ -35,7 +36,8 @@ typedef enum {
 
 static const char *series_action_items[SERIES_ACTION_COUNT] = {
     "Add episode",
-    "Show info",
+    "Remove episode",
+    "Update info",
     "Cancel"
 };
 
@@ -256,21 +258,33 @@ void plugin_tui(void)
         else if (ch == '\n' || ch == KEY_ENTER) {
             if (movies[selected].is_series) {
                 int a = generic_menu(series_action_items, SERIES_ACTION_COUNT);
+
                 if (a == SERIES_Add) {
                     next_episode(selected);
-                    snprintf(status, sizeof(status), "Episode added");
-                } else if (a == SERIES_INFO) {
-                    snprintf(status, sizeof(status), "%s S%02dE%02d",
+                    snprintf(status, sizeof(status), "Episode added: S%02dE%02d",
+                             movies[selected].season, movies[selected].episode);
+                }
+                else if (a == SERIES_Remove) {
+                    prev_episode(selected);
+                    snprintf(status, sizeof(status), "Episode removed: S%02dE%02d",
+                             movies[selected].season, movies[selected].episode);
+                }
+                else if (a == SERIES_UpdateInfo) {
+                    snprintf(status, sizeof(status),
+                             "Title: %s | S%02dE%02d | Watched: %s | Genre: %s",
                              movies[selected].title,
                              movies[selected].season,
-                             movies[selected].episode);
+                             movies[selected].episode,
+                             movies[selected].watched ? "YES" : "NO",
+                             movies[selected].genre);
                 }
+                // SERIES_Cancel does nothing
             } else {
                 int a = generic_menu(movie_action_items, MOVIE_ACTION_COUNT);
+
                 if (a == MOVIE_MARK_WATCHED) {
                     movies[selected].watched = !movies[selected].watched;
-                    snprintf(status, sizeof(status),
-                             "Watched: %s",
+                    snprintf(status, sizeof(status), "Watched: %s",
                              movies[selected].watched ? "YES" : "NO");
                 } else if (a == MOVIE_INFO) {
                     snprintf(status, sizeof(status), "%s (movie)", movies[selected].title);
