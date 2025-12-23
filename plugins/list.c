@@ -7,12 +7,15 @@ void plugin_list(void) {
 
     for (int i = 0; i < movie_count; i++) {
         if (movies[i].is_series){
-            printf("%2d %-25s S%02dE%02d\n", i + 1,
+            printf("%2d) %-25s S%02dE%02d %s\n",
+                i + 1,
                 movies[i].title,
                 movies[i].season,
-                movies[i].episode);
+                movies[i].episode,
+                movies[i].watched ? "[✔]" : "[ ]");
         } else {
-            printf("%2d) %-25s (movie)\n", i + 1, movies[i].title);
+            printf("%2d) %-25s (movie)\n", i + 1, movies[i].title,
+                    movies[i].watched ? "[✔]" : "[ ]");
         }
     }
 }

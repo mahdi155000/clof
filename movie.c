@@ -70,14 +70,16 @@ int init_db(void) {
         return rc;
     }
 
-    const char *sql_create = 
-        "CREATE TABLE IF NOT EXISTS movies ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "title TEXT NOT NULL UNIQUE,"
-        "genre TEXT,"
-        "is_series INTEGER,"
-        "season INTEGER,"
-        "episode INTEGER);";
+    const char *sql_create =
+    "CREATE TABLE IF NOT EXISTS movies ("
+    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    "title TEXT NOT NULL UNIQUE,"
+    "genre TEXT,"
+    "is_series INTEGER,"
+    "season INTEGER,"
+    "episode INTEGER,"
+    "watched INTEGER DEFAULT 0"
+    ");";
 
     char *errmsg = NULL;
     rc = sqlite3_exec(db, sql_create, 0, 0, &errmsg);
@@ -94,7 +96,7 @@ int init_db(void) {
 void load_movies(void) {
     movie_count = 0;
 
-    const char *sql = "SELECT title, genre, is_series, season, episode FROM movies;";
+    const char *sql = "SELECT title, genre, is_series, season, episode, watched FROM movies;";
     sqlite3_stmt *stmt;
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK)
@@ -110,6 +112,7 @@ void load_movies(void) {
         movies[movie_count].is_series = sqlite3_column_int(stmt, 2);
         movies[movie_count].season    = sqlite3_column_int(stmt, 3);
         movies[movie_count].episode   = sqlite3_column_int(stmt, 4);
+        movies[movie_count].watched = sqlite3_column_int(stmt, 5);
 
         movie_count++;
         if (movie_count >= MAX_MOVIES)
@@ -127,7 +130,8 @@ void save_movies(void) {
             "VALUES (?, ?, ?, ?, ?) "
             "ON CONFLICT(title) DO UPDATE SET "
             "genre=excluded.genre, is_series=excluded.is_series, "
-            "season=excluded.season, episode=excluded.episode;";
+            "season=excluded.season, episode=excluded.episode,"
+            "watched=excluded.watched;";
 
         sqlite3_stmt *stmt;
         if (sqlite3_prepare_v2(db, sql_insert, -1, &stmt, 0) != SQLITE_OK)
@@ -138,6 +142,7 @@ void save_movies(void) {
         sqlite3_bind_int(stmt, 3, movies[i].is_series);
         sqlite3_bind_int(stmt, 4, movies[i].season);
         sqlite3_bind_int(stmt, 5, movies[i].episode);
+        sqlite3_bind_int(stmt, 6, movies[i].watched);
 
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);

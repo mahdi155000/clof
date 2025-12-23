@@ -19,6 +19,7 @@ typedef struct
     int is_series;
     int season;
     int episode;
+    int watched;
 }Movie;
 
 // ---- global storage ---- 
