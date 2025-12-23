@@ -161,6 +161,9 @@ static void execute_command(const char *cmd, char *status, int len)
     } else if (strcmp(cmd, "search") == 0) {
         plugin_search();
         snprintf(status, len, "Search done");
+    } else if (strcmp(cmd, "reid") == 0) {
+    plugin_reid();
+    snprintf(status, len, "Reposition done");
     } else {
         snprintf(status, len, "Unknown command: %s", cmd);
     }
