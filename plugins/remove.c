@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../movie.h"
+#include "../db.h"
 
 void plugin_remove(void) {
     int num;
@@ -22,6 +23,6 @@ void plugin_remove(void) {
 
     printf("Removed: %s\n", movies[index].title);
 
-    remove_movie(index);
-    save_movies();
+    db_delete_movie(movies[index].title);
+    db_save_movies();
 }

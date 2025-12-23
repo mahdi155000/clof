@@ -31,7 +31,6 @@ void plugin_update(void) {
     else
         prev_episode(index);
     
-    save_movies();
 
     printf("Updated: %s S%02dE%02d\n",
             movies[index].title,

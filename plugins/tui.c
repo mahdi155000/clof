@@ -247,7 +247,6 @@ void plugin_tui(void)
                     else
                         prev_episode(index);
 
-                    save_movies();
                     snprintf(status, sizeof(status), "Episode updated");
                 } else {
                     snprintf(status, sizeof(status), "Out of range");
@@ -320,7 +319,6 @@ void plugin_tui(void)
 
                 if (a == SERIES_Add) {
                     next_episode(selected);
-                    save_movies();
                     snprintf(status, sizeof(status), "Episode added");
                 }
                 else if (a == SERIES_INFO) {
@@ -338,7 +336,6 @@ void plugin_tui(void)
 
                 if (a == MOVIE_MARK_WATCHED) {
                     movies[selected].watched = !movies[selected].watched;
-                    save_movies();
                     snprintf(status, sizeof(status),
                         "Watched: %s",
                         movies[selected].watched ? "YES" : "NO");

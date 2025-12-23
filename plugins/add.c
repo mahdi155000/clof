@@ -45,7 +45,6 @@ void plugin_add(void) {
     /* NEW: default watched state */
     movies[movie_count - 1].watched = 0;
 
-    save_movies();
 
     printf("Added.\n");
 }

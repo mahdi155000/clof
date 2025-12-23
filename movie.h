@@ -8,7 +8,6 @@
 #define TITLE_LEN 100
 #define GENRE_LEN 50
 
-extern sqlite3 *db;
 
 //  ----- data structures ------
 typedef struct

@@ -5,6 +5,7 @@ SRC = \
 	main.c \
 	plugins/tui.c \
 	movie.c \
+	db.c\
 	plugins/plugins.c \
 	plugins/lof.c \
 	plugins/list.c \

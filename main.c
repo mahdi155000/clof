@@ -1,18 +1,17 @@
 #include "plugin.h"
 #include "movie.h"
+#include "db.h"
 
 extern Plugin plugins[];
 extern int plugin_count;
 
 int main(void) {
-    if (init_db() != SQLITE_OK)
-        return 1;  // exit if DB failed
+    db_init();
+    db_load_movies();
 
-    load_movies();
+    plugin_tui();
 
-    plugin_tui();  // TUI interface
-
-    save_movies();
-    close_db();
+    db_save_movies();
+    db_close();
     return 0;
 }

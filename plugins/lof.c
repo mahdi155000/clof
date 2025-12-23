@@ -59,6 +59,5 @@ void plugin_lof(void) {
         else
             prev_episode(index);
 
-        save_movies();
     }
 }
