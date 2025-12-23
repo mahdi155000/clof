@@ -20,10 +20,10 @@ typedef enum {
  * ========================================================= */
 
 typedef enum {
-    SERIES_Add,
-    SERIES_Remove,
-    SERIES_UpdateInfo,
-    SERIES_Cancel,
+    SERIES_ADD,
+    SERIES_REMOVE,
+    SERIES_INFO,
+    SERIES_CANCEL,
     SERIES_ACTION_COUNT
 } SeriesAction;
 
@@ -37,7 +37,7 @@ typedef enum {
 static const char *series_action_items[SERIES_ACTION_COUNT] = {
     "Add episode",
     "Remove episode",
-    "Update info",
+    "Show full info",
     "Cancel"
 };
 
@@ -94,6 +94,7 @@ static void draw_screen(int selected, InputMode mode, const char *status, const 
         mvprintw(maxy - 2, 0, "NORMAL MODE");
 
     mvprintw(maxy - 1, 0, "%s", status);
+    clrtoeol();
     refresh();
 }
 
@@ -164,8 +165,14 @@ static void execute_command(const char *cmd, char *status, int len)
         snprintf(status, len, "Unknown command: %s", cmd);
     }
 
-    reset_prog_mode();
+    // update status on bottom line
+    int maxy, maxx;
+    getmaxyx(stdscr, maxy, maxx);
+    mvprintw(maxy - 1, 0, "%s", status);
+    clrtoeol();
     refresh();
+
+    reset_prog_mode();
 }
 
 /* =========================================================
@@ -239,12 +246,14 @@ void plugin_tui(void)
                 mode = MODE_NORMAL;
                 snprintf(status, sizeof(status), "Canceled");
             } else if (ch == KEY_BACKSPACE || ch == 127) {
-                if (in_len > 0)
+                if (in_len > 0) {
                     input[--in_len] = '\0';
+                }
             } else if (ch >= 32 && ch <= 126) {
-                if (in_len < (int)sizeof(input) - 1)
+                if (in_len < (int)sizeof(input) - 1) {
                     input[in_len++] = ch;
                     input[in_len] = '\0';
+                }
             }
             continue;
         }
@@ -258,36 +267,30 @@ void plugin_tui(void)
         else if (ch == '\n' || ch == KEY_ENTER) {
             if (movies[selected].is_series) {
                 int a = generic_menu(series_action_items, SERIES_ACTION_COUNT);
-
-                if (a == SERIES_Add) {
+                if (a == SERIES_ADD) {
                     next_episode(selected);
-                    snprintf(status, sizeof(status), "Episode added: S%02dE%02d",
-                             movies[selected].season, movies[selected].episode);
-                }
-                else if (a == SERIES_Remove) {
+                    snprintf(status, sizeof(status), "Episode added");
+                } else if (a == SERIES_REMOVE) {
                     prev_episode(selected);
-                    snprintf(status, sizeof(status), "Episode removed: S%02dE%02d",
-                             movies[selected].season, movies[selected].episode);
-                }
-                else if (a == SERIES_UpdateInfo) {
+                    snprintf(status, sizeof(status), "Episode removed");
+                } else if (a == SERIES_INFO) {
                     snprintf(status, sizeof(status),
-                             "Title: %s | S%02dE%02d | Watched: %s | Genre: %s",
+                             "Title: %s | Season: %02d | Episode: %02d | Watched: %s",
                              movies[selected].title,
                              movies[selected].season,
                              movies[selected].episode,
-                             movies[selected].watched ? "YES" : "NO",
-                             movies[selected].genre);
+                             movies[selected].watched ? "YES" : "NO");
                 }
-                // SERIES_Cancel does nothing
             } else {
                 int a = generic_menu(movie_action_items, MOVIE_ACTION_COUNT);
-
                 if (a == MOVIE_MARK_WATCHED) {
                     movies[selected].watched = !movies[selected].watched;
-                    snprintf(status, sizeof(status), "Watched: %s",
+                    snprintf(status, sizeof(status),
+                             "Watched: %s",
                              movies[selected].watched ? "YES" : "NO");
                 } else if (a == MOVIE_INFO) {
-                    snprintf(status, sizeof(status), "%s (movie)", movies[selected].title);
+                    snprintf(status, sizeof(status),
+                             "%s (movie)", movies[selected].title);
                 }
             }
         }

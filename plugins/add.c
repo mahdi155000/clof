@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>   // added for atoi
 #include "../movie.h"
 
 void plugin_add(void) {
     char title[TITLE_LEN];
+    char tmp[16];
     int is_series = 0;
     int season = 0;
     int episode = 0;
@@ -25,26 +27,24 @@ void plugin_add(void) {
     }
 
     printf("Is series? (0 = No, 1 = Yes): ");
-    if (scanf("%d", &is_series) != 1) {
-        printf("Invalid input.\n");
-        while (getchar() != '\n');
+    if (!fgets(tmp, sizeof(tmp), stdin))
         return;
-    }
-    getchar(); /* consume newline */
+    is_series = atoi(tmp);
 
     if (is_series) {
         printf("Season: ");
-        scanf("%d", &season);
+        if (!fgets(tmp, sizeof(tmp), stdin))
+            return;
+        season = atoi(tmp);
+
         printf("Episode: ");
-        scanf("%d", &episode);
-        getchar(); /* consume newline */
+        if (!fgets(tmp, sizeof(tmp), stdin))
+            return;
+        episode = atoi(tmp);
     }
 
     add_movie(title, is_series, season, episode);
-
-    /* NEW: default watched state */
     movies[movie_count - 1].watched = 0;
-
 
     printf("Added.\n");
 }
