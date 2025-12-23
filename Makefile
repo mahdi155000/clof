@@ -23,7 +23,7 @@ TARGET = clof
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncurses -lsqlite3
+	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncursesw -lsqlite3
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
