@@ -143,30 +143,16 @@ static void execute_command(const char *cmd, char *status, int len)
     def_prog_mode();
     endwin();
 
-    if (strcmp(cmd, "add") == 0) {
-        plugin_add();
-        snprintf(status, len, "Add done");
-    } else if (strcmp(cmd, "remove") == 0) {
-        plugin_remove();
-        snprintf(status, len, "Remove done");
-    } else if (strcmp(cmd, "update") == 0) {
-        plugin_update();
-        snprintf(status, len, "Update done");
-    } else if (strcmp(cmd, "help") == 0) {
-        plugin_help();
-        snprintf(status, len, "Help");
-    } else if (strcmp(cmd, "list") == 0) {
-        plugin_list();
-        snprintf(status, len, "List done");
-    } else if (strcmp(cmd, "search") == 0) {
-        plugin_search();
-        snprintf(status, len, "Search done");
-    } else if (strcmp(cmd, "reid") == 0) {
-    plugin_reid();
-    snprintf(status, len, "Reposition done");
-    } else {
-        snprintf(status, len, "Unknown command: %s", cmd);
+
+    // just for test plugin auto registration
+    for (int i = 0; i < plugin_count; i++) {
+        if (strcmp(cmd, plugins[i].name) == 0) {
+            plugins[i].func();
+            snprintf(status, len, "%s done", cmd);
+            return;
+        }
     }
+    snprintf(status, len, "Unknown command: %s", cmd);
 
     // update status on bottom line
     int maxy, maxx;

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>   // added for atoi
 #include "../movie.h"
+#include "../plugin.h"
 
 void plugin_add(void) {
     char title[TITLE_LEN];
@@ -47,4 +48,9 @@ void plugin_add(void) {
     movies[movie_count - 1].watched = 0;
 
     printf("Added.\n");
+}
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("add", plugin_add);
 }

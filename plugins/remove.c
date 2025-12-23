@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "../movie.h"
 #include "../db.h"
+#include "../plugin.h"
 
 void plugin_remove(void) {
     int num;
@@ -25,4 +26,10 @@ void plugin_remove(void) {
 
     db_delete_movie(movies[index].title);
     db_save_movies();
+}
+
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("remove", plugin_remove);
 }

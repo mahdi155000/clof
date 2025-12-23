@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../movie.h"
-
+#include "../plugin.h"
 
 static void print_lof_list(void)
 {
@@ -60,4 +60,10 @@ void plugin_lof(void) {
             prev_episode(index);
 
     }
+}
+
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("lof", plugin_lof);
 }

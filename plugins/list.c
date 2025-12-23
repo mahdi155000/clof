@@ -19,3 +19,9 @@ void plugin_list(void) {
         }
     }
 }
+
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("list", plugin_list);
+}

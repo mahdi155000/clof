@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../movie.h"
+#include "../plugin.h"
 
 void plugin_search(void) {
     char query[TITLE_LEN];
@@ -31,4 +32,10 @@ void plugin_search(void) {
     if (!found) {
         printf("No matches found.\n");
     }
+}
+
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("search", plugin_search);
 }

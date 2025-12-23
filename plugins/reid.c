@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../movie.h"
+#include "../plugin.h"
 
 /* Reposition (reid) plugin */
 void plugin_reid(void) {
@@ -49,4 +50,11 @@ void plugin_reid(void) {
     movies[to] = temp;
 
     printf("Movie repositioned from %d to %d.\n", from + 1, to + 1);
+}
+
+
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("reid", plugin_reid);
 }

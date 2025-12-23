@@ -2,7 +2,7 @@
 #include "movie.h"
 #include "db.h"
 
-extern Plugin plugins[];
+extern PluginEntry plugins[];
 extern int plugin_count;
 
 int main(void) {

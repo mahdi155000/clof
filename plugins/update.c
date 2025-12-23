@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../movie.h"
+#include "../plugin.h"
 
 void plugin_update(void) {
     int input;
@@ -36,4 +37,9 @@ void plugin_update(void) {
             movies[index].title,
                 movies[index].season,
             movies[index].episode);
+}
+// register automatically
+__attribute__((constructor))
+static void register_me(void) {
+    register_plugin("update", plugin_update);
 }
