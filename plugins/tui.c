@@ -211,7 +211,7 @@ void plugin_tui(void)
 
     InputMode mode = MODE_NORMAL;
 
-    char status[80] = "";
+    char status[256] = "";
     char input[16]  = "";
     int  in_len     = 0;
 
