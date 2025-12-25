@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include <cjson/cJSON.h>
 #include "../movie.h"
+#include "vlc_queue.h"  // Include your queue header
 
 static size_t write_callback(void *data, size_t size, size_t nmemb, void *user) {
     strncat((char*)user, (char*)data, size * nmemb);
@@ -57,15 +58,23 @@ void vlc_track_and_update(const char *vlc_password) {
 
                     int idx = movie_exists(title);
                     if (idx != -1) {
+                        // Existing movie, update season/episode
                         movies[idx].season  = season;
                         movies[idx].episode = episode;
 
-                        /* Optionally update watched if near end */
                         if (time && length &&
-                           (length->valueint > 0 &&
-                            time->valueint >= (length->valueint - 5))) {
+                            (length->valueint > 0 &&
+                             time->valueint >= (length->valueint - 5))) {
                             movies[idx].watched = 1;
                         }
+                    } else {
+                        // New movie/episode detected, push to VLC queue
+                        NewEpisode ne;
+                        strncpy(ne.title, title, sizeof(ne.title)-1);
+                        ne.title[sizeof(ne.title)-1] = 0;
+                        ne.season  = season;
+                        ne.episode = episode;
+                        queue_push(&vlc_new_queue, ne);
                     }
                 }
             }
@@ -74,4 +83,3 @@ void vlc_track_and_update(const char *vlc_password) {
 
     cJSON_Delete(root);
 }
-

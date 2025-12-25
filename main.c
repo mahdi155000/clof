@@ -4,9 +4,12 @@
 #include "db.h"
 #include <pthread.h>
 #include "src/vlc_tracker.h"
+#include "src/vlc_queue.h"
+
 
 extern PluginEntry plugins[];
 extern int plugin_count;
+// NewEpisodeQueue vlc_new_queue;
 
 // int main(void) {
 //     db_init();
@@ -23,6 +26,9 @@ int main(void) {
     // 1️⃣ Initialize database
     db_init();
     db_load_movies();
+    // queue_init(&vlc_new_queue);
+    queue_init();
+    
 
     // 2️⃣ Start VLC tracking thread
     const char *vlc_password = "testpass"; // VLC HTTP password

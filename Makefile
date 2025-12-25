@@ -16,7 +16,9 @@ SRC = \
 	plugins/search.c\
 	plugins/reid.c \
 	src/vlc_tracker.c\
-	src/vlc_tracker_thread.c
+	src/vlc_tracker_thread.c\
+	src/vlc_queue.c
+
 
 
 OBJ = $(SRC:.c=.o)
