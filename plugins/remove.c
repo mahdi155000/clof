@@ -1,45 +1,77 @@
 #include <ncursesw/ncurses.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "../movie.h"
 #include "../db.h"
 #include "../plugin.h"
-#include "popup.h"
 
-void plugin_remove(WINDOW *parent)
+void plugin_remove(WINDOW *parent_win)
 {
-    (void)parent;
+    int height = 7, width = 60;
+    int starty = (LINES - height) / 2;
+    int startx = (COLS - width) / 2;
 
-    WINDOW *win = popup_create(8, 48, "Remove Movie");
-    char buf[16];
+    WINDOW *win = newwin(height, width, starty, startx);
+    box(win, 0, 0);
+    keypad(win, TRUE);
+
+    char input_str[16];
     int index;
 
     echo();
-    mvwprintw(win, 2, 2, "Movie number:");
-    mvwgetnstr(win, 2, 17, buf, sizeof(buf)-1);
-    index = atoi(buf) - 1;
+
+    wmove(win, 1, 2);
+    wprintw(win, "Entry number to remove: ");
+    wrefresh(win);
+    wgetnstr(win, input_str, sizeof(input_str) - 1);
+
+    index = atoi(input_str) - 1;
 
     if (index < 0 || index >= movie_count) {
-        mvwprintw(win, 5, 2, "Invalid index");
+        wmove(win, 3, 2);
+        wprintw(win, "Invalid entry number.");
         wrefresh(win);
         wgetch(win);
-        goto done;
+        noecho();
+        delwin(win);
+        return;
     }
 
-    db_delete_movie(movies[index].title);
-    remove_movie(index);   // IMPORTANT (memory sync)
+    wmove(win, 3, 2);
+    wprintw(win, "Remove '%s'? (y/n)", movies[index].title);
+    wrefresh(win);
+
+    int ch = wgetch(win);
+    if (ch != 'y' && ch != 'Y') {
+        wmove(win, 4, 2);
+        wprintw(win, "Canceled.");
+        wrefresh(win);
+        wgetch(win);
+        noecho();
+        delwin(win);
+        return;
+    }
+
+    /* shift movies */
+    for (int i = index; i < movie_count - 1; i++) {
+        movies[i] = movies[i + 1];
+    }
+    movie_count--;
+
     db_save_movies();
 
-    mvwprintw(win, 5, 2, "Removed successfully");
+    wmove(win, 4, 2);
+    wprintw(win, "Removed successfully.");
     wrefresh(win);
+
     wgetch(win);
 
-done:
     noecho();
-    popup_close(win);
+    delwin(win);
 }
 
+/* auto register */
 __attribute__((constructor))
 static void register_me(void)
 {
