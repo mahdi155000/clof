@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -pthread
 
 SRC = \
 	main.c \
@@ -15,7 +15,8 @@ SRC = \
 	plugins/help.c \
 	plugins/search.c\
 	plugins/reid.c \
-	src/vlc_tracker.c
+	src/vlc_tracker.c\
+	src/vlc_tracker_thread.c
 
 
 OBJ = $(SRC:.c=.o)
@@ -25,7 +26,7 @@ TARGET = clof
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncursesw -lsqlite3 -lcurl -lcjson
+	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncursesw -lsqlite3 -lcurl -lcjson -pthread
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
