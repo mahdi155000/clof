@@ -1,6 +1,7 @@
 #include <ncursesw/ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../movie.h"
 #include "../db.h"
 #include "../plugin.h"
