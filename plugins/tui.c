@@ -205,38 +205,59 @@ static void execute_command(const char *cmd, char *status, int len)
  * TUI entry
  * ========================================================= */
 
-void plugin_tui(void)
+ void plugin_tui(void)
 {
-    setlocale(LC_ALL, "");
+    setlocale(LC_ALL, ""); // required for UTF‑8 wide chars
     initscr();
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
     curs_set(0);
 
-    int ch, selected=0;
+    int ch, selected = 0;
     InputMode mode = MODE_NORMAL;
-    char status[256]="";
-    char input[16]="";
-    int in_len=0;
+    char status[256] = "";
+    char input[16]  = "";
+    int in_len = 0;
 
-    while(1) {
+    timeout(100); // getch() waits max 100ms (non-blocking loop)
+
+    while (1) {
         draw_screen(selected, mode, status, input);
 
-        // --- 1️⃣ Process VLC new episodes ---
+        // Process VLC queue only if there is a new episode
         NewEpisode ne;
-        while(queue_pop(&vlc_new_queue, &ne)) {
+        if (queue_pop(&vlc_new_queue, &ne)) {
             char question[200];
             snprintf(question, sizeof(question),
                      "Add \"%s S%02dE%02d\" to clof?",
                      ne.title, ne.season, ne.episode);
-            int res = confirm_popup(question);
-            if(res == CONFIRM_YES) {
-                add_movie(ne.title, 1, ne.season, ne.episode);
+
+            int res = confirm_popup(question); // Yes/No/Cancel popup
+            if (res == CONFIRM_YES) {
+                int idx = movie_exists(ne.title);
+                if (idx == -1) {
+                    add_movie(ne.title, 1, ne.season, ne.episode); // New series
+                    snprintf(status, sizeof(status),
+                             "Added: %s S%02dE%02d",
+                             ne.title, ne.season, ne.episode);
+                } else {
+                    // Update only if new episode is higher
+                    if (movies[idx].season < ne.season ||
+                        (movies[idx].season == ne.season &&
+                         movies[idx].episode < ne.episode)) {
+                        movies[idx].season = ne.season;
+                        movies[idx].episode = ne.episode;
+                        snprintf(status, sizeof(status),
+                                 "Updated: %s S%02dE%02d",
+                                 ne.title, ne.season, ne.episode);
+                    } else {
+                        snprintf(status, sizeof(status),
+                                 "Skipped: %s S%02dE%02d (already up-to-date)",
+                                 ne.title, ne.season, ne.episode);
+                    }
+                }
                 db_save_movies();
-                snprintf(status, sizeof(status),
-                         "Added: %s S%02dE%02d",
-                         ne.title, ne.season, ne.episode);
             } else {
                 snprintf(status, sizeof(status),
                          "Skipped: %s S%02dE%02d",
@@ -244,65 +265,89 @@ void plugin_tui(void)
             }
         }
 
-        // --- 2️⃣ User input ---
+        // Read user input
         ch = getch();
+        if (ch == ERR) ch = 0;
 
-        // NUMBER MODE
-        if(mode==MODE_NUMBER) {
-            if((ch>='0' && ch<='9') || (ch=='-' && in_len==0)) {
-                if(in_len<(int)sizeof(input)-1) {
-                    input[in_len++]=ch;
-                    input[in_len]=0;
+        /* NUMBER MODE */
+        if (mode == MODE_NUMBER) {
+            if ((ch >= '0' && ch <= '9') || (ch == '-' && in_len == 0)) {
+                if (in_len < (int)sizeof(input) - 1) {
+                    input[in_len++] = ch;
+                    input[in_len] = '\0';
                 }
-            } else if(ch=='\n' || ch==KEY_ENTER) {
+            } else if (ch == '\n' || ch == KEY_ENTER) {
                 int value = atoi(input);
-                int index = abs(value)-1;
-                if(index>=0 && index<movie_count) {
-                    selected=index;
-                    if(value>0) next_episode(index);
+                int index = abs(value) - 1;
+                if (index >= 0 && index < movie_count) {
+                    selected = index;
+                    if (value > 0) next_episode(index);
                     else prev_episode(index);
-                    snprintf(status,sizeof(status),"Episode updated");
-                } else snprintf(status,sizeof(status),"Out of range");
-                in_len=0; input[0]=0; mode=MODE_NORMAL;
-            } else if(ch==27) { mode=MODE_NORMAL; in_len=0; input[0]=0; }
+                    snprintf(status, sizeof(status), "Episode updated");
+                } else {
+                    snprintf(status, sizeof(status), "Out of range");
+                }
+                in_len = 0;
+                input[0] = '\0';
+                mode = MODE_NORMAL;
+            } else if (ch == 27) { // ESC
+                mode = MODE_NORMAL; in_len = 0; input[0] = 0;
+            }
             continue;
         }
 
-        // COMMAND MODE
-        if(mode==MODE_COMMAND) {
-            if(ch=='\n' || ch==KEY_ENTER) {
-                execute_command(input,status,sizeof(status));
-                in_len=0; input[0]=0; mode=MODE_NORMAL;
-            } else if(ch==27) { mode=MODE_NORMAL; in_len=0; input[0]=0; }
-            else if(ch==KEY_BACKSPACE || ch==127) { if(in_len>0) input[--in_len]=0; }
-            else if(ch>=32 && ch<=126) { if(in_len<(int)sizeof(input)-1) input[in_len++]=ch; input[in_len]=0; }
+        /* COMMAND MODE */
+        if (mode == MODE_COMMAND) {
+            if (ch == '\n' || ch == KEY_ENTER) {
+                execute_command(input, status, sizeof(status));
+                in_len = 0; input[0] = 0; mode = MODE_NORMAL;
+            } else if (ch == 27) { // ESC
+                mode = MODE_NORMAL; in_len = 0; input[0] = 0;
+            } else if (ch == KEY_BACKSPACE || ch == 127) {
+                if (in_len > 0) input[--in_len] = 0;
+            } else if (ch >= 32 && ch <= 126) {
+                if (in_len < (int)sizeof(input) - 1) {
+                    input[in_len++] = ch;
+                    input[in_len] = 0;
+                }
+            }
             continue;
         }
 
-        // NORMAL MODE
-        if(ch=='q') break;
-        else if(ch==KEY_UP && selected>0) selected--;
-        else if(ch==KEY_DOWN && selected<movie_count-1) selected++;
-        else if(ch=='n') { mode=MODE_NUMBER; in_len=0; input[0]=0; }
-        else if(ch==':') { mode=MODE_COMMAND; in_len=0; input[0]=0; }
-        else if(ch=='\n' || ch==KEY_ENTER) {
-            if(movies[selected].is_series) {
-                int a = generic_menu(series_action_items,SERIES_ACTION_COUNT);
-                if(a==SERIES_ADD) { next_episode(selected); snprintf(status,sizeof(status),"Episode added"); }
-                else if(a==SERIES_REMOVE) { prev_episode(selected); snprintf(status,sizeof(status),"Episode removed"); }
-                else if(a==SERIES_INFO) {
-                    snprintf(status,sizeof(status),
+        /* NORMAL MODE */
+        if (ch == 'q') break;
+        else if (ch == KEY_UP && selected > 0) selected--;
+        else if (ch == KEY_DOWN && selected < movie_count - 1) selected++;
+        else if (ch == 'n') { mode = MODE_NUMBER; in_len = 0; input[0] = 0; }
+        else if (ch == ':') { mode = MODE_COMMAND; in_len = 0; input[0] = 0; }
+        else if (ch == '\n' || ch == KEY_ENTER) {
+            if (movies[selected].is_series) {
+                int a = generic_menu(series_action_items, SERIES_ACTION_COUNT);
+                if (a == SERIES_ADD) {
+                    next_episode(selected);
+                    snprintf(status, sizeof(status), "Episode added");
+                } else if (a == SERIES_REMOVE) {
+                    prev_episode(selected);
+                    snprintf(status, sizeof(status), "Episode removed");
+                } else if (a == SERIES_INFO) {
+                    snprintf(status, sizeof(status),
                              "Title: %s | S%02dE%02d | Watched: %s",
                              movies[selected].title,
                              movies[selected].season,
                              movies[selected].episode,
-                             movies[selected].watched?"YES":"NO");
+                             movies[selected].watched ? "YES" : "NO");
                 }
             } else {
-                int a = generic_menu(movie_action_items,MOVIE_ACTION_COUNT);
-                if(a==MOVIE_MARK_WATCHED) { movies[selected].watched=!movies[selected].watched;
-                    snprintf(status,sizeof(status),"Watched: %s",movies[selected].watched?"YES":"NO"); }
-                else if(a==MOVIE_INFO) snprintf(status,sizeof(status),"%s (movie)",movies[selected].title);
+                int a = generic_menu(movie_action_items, MOVIE_ACTION_COUNT);
+                if (a == MOVIE_MARK_WATCHED) {
+                    movies[selected].watched = !movies[selected].watched;
+                    snprintf(status, sizeof(status),
+                             "Watched: %s",
+                             movies[selected].watched ? "YES" : "NO");
+                } else if (a == MOVIE_INFO) {
+                    snprintf(status, sizeof(status),
+                             "%s (movie)", movies[selected].title);
+                }
             }
         }
     }
