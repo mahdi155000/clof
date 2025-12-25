@@ -1,3 +1,4 @@
+#include "plugins/tui.h"
 #include "plugin.h"
 #include "movie.h"
 #include "db.h"

@@ -1,38 +1,66 @@
-#include <stdio.h>
+#include <ncursesw/ncurses.h>
 #include <stdlib.h>
 #include "../movie.h"
 #include "../plugin.h"
 
 /* Reposition (reid) plugin */
-void plugin_reid(void) {
+void plugin_reid(WINDOW *win) {
     if (movie_count < 2) {
-        printf("Not enough movies to reposition.\n");
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, 1, 2, "Not enough movies to reposition.");
+        mvwprintw(win, 3, 2, "Press any key to continue...");
+        wrefresh(win);
+        wgetch(win);
         return;
     }
 
-    char tmp[16];
+    char input[16];
     int from = -1, to = -1;
 
-    printf("Move movie at position #: ");
-    if (!fgets(tmp, sizeof(tmp), stdin)) return;
-    from = atoi(tmp) - 1;
+    // Get "from" position
+    werase(win);
+    box(win, 0, 0);
+    mvwprintw(win, 1, 2, "Move movie at position #: ");
+    wrefresh(win);
+    wgetnstr(win, input, sizeof(input) - 1);
+    from = atoi(input) - 1;
 
     if (from < 0 || from >= movie_count) {
-        printf("Invalid position.\n");
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, 1, 2, "Invalid position.");
+        mvwprintw(win, 3, 2, "Press any key to continue...");
+        wrefresh(win);
+        wgetch(win);
         return;
     }
 
-    printf("Move to position #: ");
-    if (!fgets(tmp, sizeof(tmp), stdin)) return;
-    to = atoi(tmp) - 1;
+    // Get "to" position
+    werase(win);
+    box(win, 0, 0);
+    mvwprintw(win, 1, 2, "Move to position #: ");
+    wrefresh(win);
+    wgetnstr(win, input, sizeof(input) - 1);
+    to = atoi(input) - 1;
 
     if (to < 0 || to >= movie_count) {
-        printf("Invalid position.\n");
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, 1, 2, "Invalid position.");
+        mvwprintw(win, 3, 2, "Press any key to continue...");
+        wrefresh(win);
+        wgetch(win);
         return;
     }
 
     if (from == to) {
-        printf("Already at that position.\n");
+        werase(win);
+        box(win, 0, 0);
+        mvwprintw(win, 1, 2, "Already at that position.");
+        mvwprintw(win, 3, 2, "Press any key to continue...");
+        wrefresh(win);
+        wgetch(win);
         return;
     }
 
@@ -49,9 +77,13 @@ void plugin_reid(void) {
 
     movies[to] = temp;
 
-    printf("Movie repositioned from %d to %d.\n", from + 1, to + 1);
+    werase(win);
+    box(win, 0, 0);
+    mvwprintw(win, 1, 2, "Movie repositioned from %d to %d.", from + 1, to + 1);
+    mvwprintw(win, 3, 2, "Press any key to continue...");
+    wrefresh(win);
+    wgetch(win);
 }
-
 
 // register automatically
 __attribute__((constructor))

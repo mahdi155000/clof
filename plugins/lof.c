@@ -23,42 +23,51 @@ static void print_lof_list(void)
 
     printf("================\n");
 }
-void plugin_lof(void) {
+
+void plugin_lof(WINDOW *win) {
     int input;
 
     while (1) {
-        print_lof_list();
+        // Clear the window
+        werase(win);
+        box(win, 0, 0);
 
-        printf("Input (+N / -N / 0 / q): ");
-        if (scanf("%d", &input) != 1)
-        {
-            getchar();
-            break;
+        // Print LOF
+        for (int i = 0; i < movie_count; i++) {
+            if (movies[i].is_series) {
+                wprintw(win, "%2d) %-20s S%02dE%02d\n",
+                        i + 1, movies[i].title, movies[i].season, movies[i].episode);
+            } else {
+                wprintw(win, "%2d) %-20s (movie)\n",
+                        i + 1, movies[i].title);
+            }
         }
 
-        getchar();
+        wprintw(win, "================\n");
+        wprintw(win, "Input (+N / -N / 0 / q): ");
+        wrefresh(win);
 
-        if (input == 0) {
-            continue;
-        }
+        wscanw(win, "%d", &input);  // read input from ncurses window
+
+        if (input == 0) continue;
+        if (input == 'q') break;
 
         int index = abs(input) - 1;
 
         if (index < 0 || index >= movie_count) {
-            printf("Invalid entry.\n");
+            wprintw(win, "Invalid entry.\n");
+            wrefresh(win);
             continue;
         }
 
         if (!movies[index].is_series) {
-            printf("'%s' is a movie.\n", movies[index].title);
+            wprintw(win, "'%s' is a movie.\n", movies[index].title);
+            wrefresh(win);
             continue;
         }
 
-        if (input > 0)
-            next_episode(index);
-        else
-            prev_episode(index);
-
+        if (input > 0) next_episode(index);
+        else prev_episode(index);
     }
 }
 
