@@ -1,34 +1,33 @@
-CC = gcc
-CFLAGS = -Wall -g
+# Compiler and flags
+CC := gcc
+CFLAGS := -Wall -g -pthread -I. -Iplugins -Isrc
+LDFLAGS := -lncursesw -lsqlite3 -lcurl -lcjson -pthread
 
-SRC = \
-	main.c \
-	plugins/tui.c \
-	movie.c \
-	db.c\
-	plugins/plugins.c \
-	plugins/lof.c \
-	plugins/list.c \
-	plugins/add.c \
-	plugins/update.c \
-	plugins/remove.c \
-	plugins/help.c \
-	plugins/search.c\
-	plugins/reid.c \
-	plugins/popup.c
+# Directories
+SRC_DIR := src
+PLUGIN_DIR := plugins
 
+# Automatically collect all .c files
+SRC_FILES := $(wildcard *.c) $(wildcard $(SRC_DIR)/*.c) $(wildcard $(PLUGIN_DIR)/*.c)
+OBJ_FILES := $(SRC_FILES:.c=.o)
 
-OBJ = $(SRC:.c=.o)
+# Target executable
+TARGET := clof
 
-TARGET = clof
-
+# Default rule
 all: $(TARGET)
 
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncursesw -lsqlite3
+# Linking
+$(TARGET): $(OBJ_FILES)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+# Compile .c to .o
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Clean objects and executable
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(OBJ_FILES) $(TARGET)
+
+# Phony targets
+.PHONY: all clean
