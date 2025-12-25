@@ -15,6 +15,7 @@ SRC = \
 	plugins/help.c \
 	plugins/search.c\
 	plugins/reid.c \
+	src/vlc_tracker.c
 
 
 OBJ = $(SRC:.c=.o)
@@ -24,7 +25,7 @@ TARGET = clof
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncursesw -lsqlite3
+	$(CC) $(CFLAGS) -o $@ $(OBJ) -lncursesw -lsqlite3 -lcurl -lcjson
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
