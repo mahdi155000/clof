@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+
 #include "../movie.h"
 #include "../plugin.h"
 
@@ -16,7 +17,7 @@ typedef enum {
 } InputMode;
 
 /* =========================================================
- * Action menu
+ * Action menus
  * ========================================================= */
 
 typedef enum {
@@ -34,14 +35,14 @@ typedef enum {
     MOVIE_ACTION_COUNT
 } MovieAction;
 
-static const char *series_action_items[SERIES_ACTION_COUNT] = {
+static const char *series_action_items[] = {
     "Add episode",
     "Remove episode",
     "Show full info",
     "Cancel"
 };
 
-static const char *movie_action_items[MOVIE_ACTION_COUNT] = {
+static const char *movie_action_items[] = {
     "Toggle watched",
     "Show info",
     "Cancel"
@@ -51,29 +52,34 @@ static const char *movie_action_items[MOVIE_ACTION_COUNT] = {
  * Drawing
  * ========================================================= */
 
-static void draw_screen(int selected, InputMode mode, const char *status, const char *input)
+static void draw_screen(int selected, InputMode mode,
+                        const char *status, const char *input)
 {
     clear();
     mvprintw(0, 0, "clof (ncursesw)");
-    mvprintw(1, 0, "up/down move | ENTER menu | n number | : command | q quit");
+    mvprintw(1, 0, "↑/↓ move | ENTER menu | n number | : command | q quit");
 
     int row = 3;
 
     for (int i = 0; i < movie_count; i++) {
         wchar_t mark[2] = L" ";
         if (movies[i].watched)
-            mark[0] = L'\u2714'; // ✔
-        mark[1] = L'\0';
+            mark[0] = L'\u2714';
+        mark[1] = 0;
 
         if (i == selected)
             attron(A_REVERSE);
 
         if (movies[i].is_series) {
             mvprintw(row, 0, "%2d) [%ls] %-20s S%02dE%02d",
-                     i + 1, mark, movies[i].title, movies[i].season, movies[i].episode);
+                     i + 1, mark,
+                     movies[i].title,
+                     movies[i].season,
+                     movies[i].episode);
         } else {
             mvprintw(row, 0, "%2d) [%ls] %-20s (movie)",
-                     i + 1, mark, movies[i].title);
+                     i + 1, mark,
+                     movies[i].title);
         }
 
         if (i == selected)
@@ -86,10 +92,10 @@ static void draw_screen(int selected, InputMode mode, const char *status, const 
     getmaxyx(stdscr, maxy, maxx);
     mvhline(maxy - 3, 0, '-', maxx);
 
-    if (mode == MODE_NUMBER)
-        mvprintw(maxy - 2, 0, "NUMBER: %s", input);
-    else if (mode == MODE_COMMAND)
+    if (mode == MODE_COMMAND)
         mvprintw(maxy - 2, 0, ":%s", input);
+    else if (mode == MODE_NUMBER)
+        mvprintw(maxy - 2, 0, "NUMBER: %s", input);
     else
         mvprintw(maxy - 2, 0, "NORMAL MODE");
 
@@ -99,13 +105,17 @@ static void draw_screen(int selected, InputMode mode, const char *status, const 
 }
 
 /* =========================================================
- * Generic menu
+ * Popup menu
  * ========================================================= */
 
-static int generic_menu(const char **items, int count)
+static int popup_menu(const char **items, int count)
 {
     int choice = 0, ch;
-    WINDOW *win = newwin(count + 2, 32, (LINES - count - 2) / 2, (COLS - 32) / 2);
+
+    WINDOW *win = newwin(count + 2, 32,
+                         (LINES - count - 2) / 2,
+                         (COLS - 32) / 2);
+
     box(win, 0, 0);
     keypad(win, TRUE);
 
@@ -117,6 +127,7 @@ static int generic_menu(const char **items, int count)
             if (i == choice)
                 wattroff(win, A_REVERSE);
         }
+
         wrefresh(win);
         ch = wgetch(win);
 
@@ -127,41 +138,40 @@ static int generic_menu(const char **items, int count)
         else if (ch == '\n' || ch == KEY_ENTER) {
             delwin(win);
             return choice;
-        } else if (ch == 27) { // ESC
+        }
+        else if (ch == 27) {
             delwin(win);
-            return count - 1; // cancel
+            return count - 1;
         }
     }
 }
 
 /* =========================================================
- * Command execution
+ * Execute command (SAFE)
  * ========================================================= */
 
 static void execute_command(const char *cmd, char *status, int len)
 {
-    def_prog_mode();
-    endwin();
-
-
-    // just for test plugin auto registration
     for (int i = 0; i < plugin_count; i++) {
         if (strcmp(cmd, plugins[i].name) == 0) {
-            plugins[i].func();
+
+            /* Leave ncurses safely */
+            def_prog_mode();
+            endwin();
+
+            // plugins[i].func();   // printf / scanf allowed here
+            plugins[i].func(stdscr);
+
+            /* Restore ncurses */
+            reset_prog_mode();
+            refresh();
+
             snprintf(status, len, "%s done", cmd);
             return;
         }
     }
+
     snprintf(status, len, "Unknown command: %s", cmd);
-
-    // update status on bottom line
-    int maxy, maxx;
-    getmaxyx(stdscr, maxy, maxx);
-    mvprintw(maxy - 1, 0, "%s", status);
-    clrtoeol();
-    refresh();
-
-    reset_prog_mode();
 }
 
 /* =========================================================
@@ -170,7 +180,8 @@ static void execute_command(const char *cmd, char *status, int len)
 
 void plugin_tui(void)
 {
-    setlocale(LC_ALL, ""); // important for UTF-8 ✔
+    setlocale(LC_ALL, "");
+
     initscr();
     cbreak();
     noecho();
@@ -179,8 +190,9 @@ void plugin_tui(void)
 
     int ch, selected = 0;
     InputMode mode = MODE_NORMAL;
+
     char status[256] = "";
-    char input[16] = "";
+    char input[64] = "";
     int in_len = 0;
 
     while (1) {
@@ -190,59 +202,53 @@ void plugin_tui(void)
         /* NUMBER MODE */
         if (mode == MODE_NUMBER) {
             if ((ch >= '0' && ch <= '9') || (ch == '-' && in_len == 0)) {
-                if (in_len < (int)sizeof(input) - 1) {
-                    input[in_len++] = ch;
-                    input[in_len] = '\0';
-                }
-            } else if (ch == '\n' || ch == KEY_ENTER) {
-                int value = atoi(input);
-                int index = abs(value) - 1;
+                input[in_len++] = ch;
+                input[in_len] = 0;
+            }
+            else if (ch == '\n') {
+                int val = atoi(input);
+                int idx = abs(val) - 1;
 
-                if (index >= 0 && index < movie_count) {
-                    selected = index;
-                    if (value > 0)
-                        next_episode(index);
-                    else
-                        prev_episode(index);
-
+                if (idx >= 0 && idx < movie_count) {
+                    selected = idx;
+                    if (val > 0) next_episode(idx);
+                    else prev_episode(idx);
                     snprintf(status, sizeof(status), "Episode updated");
                 } else {
                     snprintf(status, sizeof(status), "Out of range");
                 }
 
-                in_len = 0;
-                input[0] = '\0';
                 mode = MODE_NORMAL;
-            } else if (ch == 27) { // ESC
                 in_len = 0;
-                input[0] = '\0';
+                input[0] = 0;
+            }
+            else if (ch == 27) {
                 mode = MODE_NORMAL;
-                snprintf(status, sizeof(status), "Canceled");
+                in_len = 0;
+                input[0] = 0;
             }
             continue;
         }
 
         /* COMMAND MODE */
         if (mode == MODE_COMMAND) {
-            if (ch == '\n' || ch == KEY_ENTER) {
+            if (ch == '\n') {
                 execute_command(input, status, sizeof(status));
-                in_len = 0;
-                input[0] = '\0';
                 mode = MODE_NORMAL;
-            } else if (ch == 27) { // ESC
                 in_len = 0;
-                input[0] = '\0';
+                input[0] = 0;
+            }
+            else if (ch == 27) {
                 mode = MODE_NORMAL;
-                snprintf(status, sizeof(status), "Canceled");
-            } else if (ch == KEY_BACKSPACE || ch == 127) {
-                if (in_len > 0) {
-                    input[--in_len] = '\0';
-                }
-            } else if (ch >= 32 && ch <= 126) {
-                if (in_len < (int)sizeof(input) - 1) {
-                    input[in_len++] = ch;
-                    input[in_len] = '\0';
-                }
+                in_len = 0;
+                input[0] = 0;
+            }
+            else if (ch == KEY_BACKSPACE || ch == 127) {
+                if (in_len > 0) input[--in_len] = 0;
+            }
+            else if (ch >= 32 && ch <= 126) {
+                input[in_len++] = ch;
+                input[in_len] = 0;
             }
             continue;
         }
@@ -251,36 +257,25 @@ void plugin_tui(void)
         if (ch == 'q') break;
         else if (ch == KEY_UP && selected > 0) selected--;
         else if (ch == KEY_DOWN && selected < movie_count - 1) selected++;
-        else if (ch == 'n') { mode = MODE_NUMBER; in_len = 0; input[0] = '\0'; }
-        else if (ch == ':') { mode = MODE_COMMAND; in_len = 0; input[0] = '\0'; }
-        else if (ch == '\n' || ch == KEY_ENTER) {
+        else if (ch == 'n') {
+            mode = MODE_NUMBER;
+            in_len = 0;
+            input[0] = 0;
+        }
+        else if (ch == ':') {
+            mode = MODE_COMMAND;
+            in_len = 0;
+            input[0] = 0;
+        }
+        else if (ch == '\n') {
             if (movies[selected].is_series) {
-                int a = generic_menu(series_action_items, SERIES_ACTION_COUNT);
-                if (a == SERIES_ADD) {
-                    next_episode(selected);
-                    snprintf(status, sizeof(status), "Episode added");
-                } else if (a == SERIES_REMOVE) {
-                    prev_episode(selected);
-                    snprintf(status, sizeof(status), "Episode removed");
-                } else if (a == SERIES_INFO) {
-                    snprintf(status, sizeof(status),
-                             "Title: %s | Season: %02d | Episode: %02d | Watched: %s",
-                             movies[selected].title,
-                             movies[selected].season,
-                             movies[selected].episode,
-                             movies[selected].watched ? "YES" : "NO");
-                }
+                int a = popup_menu(series_action_items, SERIES_ACTION_COUNT);
+                if (a == SERIES_ADD) next_episode(selected);
+                else if (a == SERIES_REMOVE) prev_episode(selected);
             } else {
-                int a = generic_menu(movie_action_items, MOVIE_ACTION_COUNT);
-                if (a == MOVIE_MARK_WATCHED) {
-                    movies[selected].watched = !movies[selected].watched;
-                    snprintf(status, sizeof(status),
-                             "Watched: %s",
-                             movies[selected].watched ? "YES" : "NO");
-                } else if (a == MOVIE_INFO) {
-                    snprintf(status, sizeof(status),
-                             "%s (movie)", movies[selected].title);
-                }
+                int a = popup_menu(movie_action_items, MOVIE_ACTION_COUNT);
+                if (a == MOVIE_MARK_WATCHED)
+                    movies[selected].watched ^= 1;
             }
         }
     }

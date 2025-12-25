@@ -1,23 +1,16 @@
-// plugin.h
 #ifndef PLUGIN_H
 #define PLUGIN_H
 
-typedef void (*plugin_func_t)(void);
+#include <ncursesw/ncurses.h>  // for WINDOW
 
-typedef struct {
+typedef void (*plugin_func_t)(WINDOW *win);
+
+void register_plugin(const char *name, plugin_func_t func);
+
+extern struct plugin {
     const char *name;
     plugin_func_t func;
-} PluginEntry;
-
-#define MAX_PLUGINS 128
-
-extern PluginEntry plugins[];
+} plugins[];
 extern int plugin_count;
-
-// Add this line:
-void plugin_tui(void);
-
-// Function to register plugins
-void register_plugin(const char *name, plugin_func_t func);
 
 #endif
