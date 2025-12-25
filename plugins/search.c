@@ -1,43 +1,34 @@
 #include <ncursesw/ncurses.h>
-#include <stdio.h>
 #include <string.h>
 #include "../movie.h"
 #include "../plugin.h"
+#include "popup.h"
 
-void plugin_search(WINDOW *win) {
+void plugin_search(WINDOW *parent)
+{
+    (void)parent;
+
+    WINDOW *win = popup_create(10, 50, "Search");
     char query[TITLE_LEN];
-    int found = 0;
-
-    wclear(win);
-    wprintw(win, "Search query: ");
-    wrefresh(win);
 
     echo();
-    wgetnstr(win, query, sizeof(query) - 1);
-    noecho();
-    query[strcspn(query, "\n")] = 0;
+    mvwprintw(win, 2, 2, "Search title:");
+    mvwgetnstr(win, 2, 16, query, TITLE_LEN-1);
 
-    wprintw(win, "\n==== Search Results ====\n");
-
-    for (int i = 0; i < movie_count; i++) {
-        if (strstr(movies[i].title, query)) {
-            if (movies[i].is_series) {
-                wprintw(win, "%2d) %-25s S%02dE%02d\n",
-                        i + 1, movies[i].title,
-                        movies[i].season, movies[i].episode);
-            } else {
-                wprintw(win, "%2d) %-25s (movie)\n", i + 1, movies[i].title);
-            }
-            found = 1;
-        }
+    int row = 4;
+    for (int i = 0; i < movie_count && row < 8; i++) {
+        if (strstr(movies[i].title, query))
+            mvwprintw(win, row++, 2, "%d) %s", i+1, movies[i].title);
     }
 
-    if (!found) wprintw(win, "No matches found.\n");
     wrefresh(win);
+    wgetch(win);
+    noecho();
+    popup_close(win);
 }
 
-// register automatically
 __attribute__((constructor))
-static void register_me(void) {
+static void register_me(void)
+{
     register_plugin("search", plugin_search);
 }

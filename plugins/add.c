@@ -1,68 +1,83 @@
-#include <stdio.h>
+
+#include <ncursesw/ncurses.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ncursesw/ncurses.h>
 #include "../movie.h"
 #include "../plugin.h"
 
-void plugin_add(WINDOW *win) {
-    char title[TITLE_LEN];
-    char tmp[16];
+void plugin_add(WINDOW *parent)
+{
+    (void)parent; // we do NOT use stdscr or bottom window
+
+    int h = 13;
+    int w = 52;
+    int y = (LINES - h) / 2;
+    int x = (COLS - w) / 2;
+
+    WINDOW *win = newwin(h, w, y, x);
+    box(win, 0, 0);
+    keypad(win, TRUE);
+
+    char title[TITLE_LEN] = {0};
+    char buf[16] = {0};
     int is_series = 0;
     int season = 0;
     int episode = 0;
 
-    // Enable echo temporarily for this window
     echo();
-    wprintw(win, "Title: ");
+
+    mvwprintw(win, 1, 2, "Add new movie / series");
+    mvwprintw(win, 3, 2, "Title:");
     wrefresh(win);
-    wgetnstr(win, title, sizeof(title) - 1);
-    title[strcspn(title, "\n")] = '\0';
+    mvwgetnstr(win, 3, 10, title, TITLE_LEN - 1);
 
     if (title[0] == '\0') {
-        wprintw(win, "Empty title.\n");
+        mvwprintw(win, h - 2, 2, "Title cannot be empty");
         wrefresh(win);
-        noecho();  // disable echo again
-        return;
+        wgetch(win);
+        goto done;
     }
 
     if (movie_exists(title) != -1) {
-        wprintw(win, "Already exists.\n");
+        mvwprintw(win, h - 2, 2, "Already exists");
         wrefresh(win);
-        noecho();
-        return;
+        wgetch(win);
+        goto done;
     }
 
-    wprintw(win, "Is series? (0 = No, 1 = Yes): ");
+    mvwprintw(win, 5, 2, "Is series (0/1):");
     wrefresh(win);
-    wgetnstr(win, tmp, sizeof(tmp) - 1);
-    is_series = atoi(tmp);
+    mvwgetnstr(win, 5, 22, buf, sizeof(buf) - 1);
+    is_series = atoi(buf);
 
     if (is_series) {
-        wprintw(win, "Season: ");
+        mvwprintw(win, 6, 2, "Season:");
         wrefresh(win);
-        wgetnstr(win, tmp, sizeof(tmp) - 1);
-        season = atoi(tmp);
+        mvwgetnstr(win, 6, 11, buf, sizeof(buf) - 1);
+        season = atoi(buf);
 
-        wprintw(win, "Episode: ");
+        mvwprintw(win, 7, 2, "Episode:");
         wrefresh(win);
-        wgetnstr(win, tmp, sizeof(tmp) - 1);
-        episode = atoi(tmp);
+        mvwgetnstr(win, 7, 12, buf, sizeof(buf) - 1);
+        episode = atoi(buf);
     }
 
     add_movie(title, is_series, season, episode);
     movies[movie_count - 1].watched = 0;
 
-    wprintw(win, "Added.\n");
+    mvwprintw(win, h - 2, 2, "Added successfully");
     wrefresh(win);
+    wgetch(win);
 
-    // Disable echo again after input
+done:
     noecho();
+    delwin(win);
 }
 
-
-// register automatically
+/* auto register */
 __attribute__((constructor))
-static void register_me(void) {
+static void register_me(void)
+{
     register_plugin("add", plugin_add);
 }
+

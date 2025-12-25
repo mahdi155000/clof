@@ -2,67 +2,41 @@
 #include <stdlib.h>
 #include "../movie.h"
 #include "../plugin.h"
+#include "popup.h"
 
-void plugin_update(WINDOW *parent_win) {
-    int height = 6, width = 50;
-    int starty = (LINES - height) / 2;
-    int startx = (COLS - width) / 2;
+void plugin_update(WINDOW *parent)
+{
+    (void)parent;
 
-    WINDOW *win = newwin(height, width, starty, startx);
-    box(win, 0, 0);
-    keypad(win, TRUE);
+    WINDOW *win = popup_create(9, 48, "Update Episode");
 
-    char input_str[16];
-    int input;
+    char buf[16];
     int index;
 
-    // Enable echo so the user can see what they type
     echo();
-
-    wmove(win, 1, 2);
-    wprintw(win, "Entry number (+N / -N): ");
-    wrefresh(win);
-    wgetnstr(win, input_str, sizeof(input_str) - 1);
-
-    input = atoi(input_str);
-    index = abs(input) - 1;
+    mvwprintw(win, 2, 2, "Movie number:");
+    mvwgetnstr(win, 2, 17, buf, sizeof(buf)-1);
+    index = atoi(buf) - 1;
 
     if (index < 0 || index >= movie_count) {
-        wmove(win, 3, 2);
-        wprintw(win, "Invalid entry number.");
-        wrefresh(win);
-        wgetch(win);  // wait for key
-        noecho();
-        delwin(win);
-        return;
-    }
-
-    if (!movies[index].is_series) {
-        wmove(win, 3, 2);
-        wprintw(win, "'%s' is not a series.", movies[index].title);
+        mvwprintw(win, 6, 2, "Invalid index");
         wrefresh(win);
         wgetch(win);
-        noecho();
-        delwin(win);
-        return;
+        goto done;
     }
 
-    if (input > 0) next_episode(index);
-    else prev_episode(index);
-
-    wmove(win, 3, 2);
-    wprintw(win, "Updated: %s S%02dE%02d",
-            movies[index].title, movies[index].season, movies[index].episode);
+    next_episode(index);
+    mvwprintw(win, 6, 2, "Episode updated");
     wrefresh(win);
+    wgetch(win);
 
-    wgetch(win);  // wait for user to see result
-
+done:
     noecho();
-    delwin(win);
+    popup_close(win);
 }
 
-// register automatically
 __attribute__((constructor))
-static void register_me(void) {
+static void register_me(void)
+{
     register_plugin("update", plugin_update);
 }

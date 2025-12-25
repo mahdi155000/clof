@@ -1,27 +1,26 @@
 #include <ncursesw/ncurses.h>
 #include "../plugin.h"
+#include "popup.h"
 
-void plugin_help(WINDOW *win) {
-    // Clear the window and draw a border
-    werase(win);
-    box(win, 0, 0);
+void plugin_help(WINDOW *parent)
+{
+    (void)parent;
 
-    mvwprintw(win, 1, 2, "Available plugins:");
-    int row = 2;
+    WINDOW *win = popup_create(10, 40, "Help");
 
-    // List all registered plugins
-    for (int i = 0; i < plugin_count; i++) {
-        mvwprintw(win, ++row, 2, "%2d) %s", i + 1, plugins[i].name);
-    }
+    mvwprintw(win, 2, 2, ":add     Add movie");
+    mvwprintw(win, 3, 2, ":remove  Remove movie");
+    mvwprintw(win, 4, 2, ":update  Next episode");
+    mvwprintw(win, 5, 2, ":search  Search title");
+    mvwprintw(win, 6, 2, ":help    This help");
 
-    mvwprintw(win, ++row + 1, 2, "Press any key to continue...");
     wrefresh(win);
-
-    wgetch(win); // wait for user input
+    wgetch(win);
+    popup_close(win);
 }
 
-// register automatically
 __attribute__((constructor))
-static void register_me(void) {
+static void register_me(void)
+{
     register_plugin("help", plugin_help);
 }

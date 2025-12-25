@@ -1,56 +1,44 @@
+#include <ncursesw/ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <ncursesw/ncurses.h>
 #include "../movie.h"
 #include "../db.h"
 #include "../plugin.h"
+#include "popup.h"
 
-void plugin_remove(WINDOW *win)
+void plugin_remove(WINDOW *parent)
 {
+    (void)parent;
+
+    WINDOW *win = popup_create(8, 48, "Remove Movie");
     char buf[16];
-    int num;
     int index;
+
     echo();
-
-    // printf("Remove entry number: ");
-    wprintw(win, "Remove entry number: ");
-    wrefresh(win);
-    wgetnstr(win,buf,sizeof(buf) -1);
-    num = atoi(buf);
-    // if (scanf("%d", &num) != 1) {
-    //     getchar();
-    //     return;
-    // }
-    // getchar(); // consume newline
-
-    noecho();
-
-    index = num - 1;
+    mvwprintw(win, 2, 2, "Movie number:");
+    mvwgetnstr(win, 2, 17, buf, sizeof(buf)-1);
+    index = atoi(buf) - 1;
 
     if (index < 0 || index >= movie_count) {
-        // printf("Invalid index.\n");
-        wprintw(win, "Invalid index.\n");
+        mvwprintw(win, 5, 2, "Invalid index");
         wrefresh(win);
-        return;
+        wgetch(win);
+        goto done;
     }
 
-    // printf("Removed: %s\n", movies[index].title);
-    wprintw(win,"Removed: %s\n",movies[index].title);
-    wrefresh(win);
-
-    /* shift movies left */
-    for (int i = index; i < movie_count - 1; i++) {
-        movies[i] = movies[i + 1];
-    }
-
-    movie_count--;
-
-    /* persist change */
+    db_delete_movie(movies[index].title);
+    remove_movie(index);   // IMPORTANT (memory sync)
     db_save_movies();
+
+    mvwprintw(win, 5, 2, "Removed successfully");
+    wrefresh(win);
+    wgetch(win);
+
+done:
+    noecho();
+    popup_close(win);
 }
 
-/* register automatically */
 __attribute__((constructor))
 static void register_me(void)
 {
