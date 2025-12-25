@@ -6,9 +6,10 @@
 static sqlite3 *db = NULL;
 
 /* ------------------ init ------------------ */
-int db_init(void) {
+int db_init(void)
+{
     int rc = sqlite3_open("movies.db", &db);
-    if (rc) {
+    if (rc != SQLITE_OK) {
         fprintf(stderr, "DB open error: %s\n", sqlite3_errmsg(db));
         return rc;
     }
@@ -25,8 +26,8 @@ int db_init(void) {
         ");";
 
     char *err = NULL;
-    rc = sqlite3_exec(db, sql, 0, 0, &err);
-    if (err) {
+    rc = sqlite3_exec(db, sql, NULL, NULL, &err);
+    if (rc != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", err);
         sqlite3_free(err);
     }
@@ -35,7 +36,8 @@ int db_init(void) {
 }
 
 /* ------------------ load ------------------ */
-void db_load_movies(void) {
+void db_load_movies(void)
+{
     movie_count = 0;
 
     const char *sql =
@@ -48,8 +50,12 @@ void db_load_movies(void) {
     while (sqlite3_step(stmt) == SQLITE_ROW && movie_count < MAX_MOVIES) {
         Movie *m = &movies[movie_count++];
 
-        strncpy(m->title, (char*)sqlite3_column_text(stmt, 0), TITLE_LEN);
-        strncpy(m->genre, (char*)sqlite3_column_text(stmt, 1), GENRE_LEN);
+        const char *title = (const char *)sqlite3_column_text(stmt, 0);
+        const char *genre = (const char *)sqlite3_column_text(stmt, 1);
+
+        snprintf(m->title, TITLE_LEN, "%s", title ? title : "");
+        snprintf(m->genre, GENRE_LEN, "%s", genre ? genre : "");
+
         m->is_series = sqlite3_column_int(stmt, 2);
         m->season    = sqlite3_column_int(stmt, 3);
         m->episode   = sqlite3_column_int(stmt, 4);
@@ -60,17 +66,21 @@ void db_load_movies(void) {
 }
 
 /* ------------------ save ------------------ */
-void db_save_movies(void) {
-    sqlite3_exec(db, "DELETE FROM movies;", 0, 0, NULL);
+void db_save_movies(void)
+{
+    sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+    sqlite3_exec(db, "DELETE FROM movies;", NULL, NULL, NULL);
 
     const char *sql =
-        "INSERT INTO movies (title, genre, is_series, season, episode, watched)"
+        "INSERT INTO movies "
+        "(title, genre, is_series, season, episode, watched) "
         "VALUES (?, ?, ?, ?, ?, ?);";
 
     sqlite3_stmt *stmt;
 
     for (int i = 0; i < movie_count; i++) {
-        sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+        if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK)
+            continue;
 
         sqlite3_bind_text(stmt, 1, movies[i].title, -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(stmt, 2, movies[i].genre, -1, SQLITE_TRANSIENT);
@@ -82,20 +92,15 @@ void db_save_movies(void) {
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);
     }
-}
 
-/* ------------------ delete ------------------ */
-void db_delete_movie(const char *title) {
-    const char *sql = "DELETE FROM movies WHERE title = ?;";
-    sqlite3_stmt *stmt;
-
-    sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
-    sqlite3_bind_text(stmt, 1, title, -1, SQLITE_TRANSIENT);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
 }
 
 /* ------------------ close ------------------ */
-void db_close(void) {
-    if (db) sqlite3_close(db);
+void db_close(void)
+{
+    if (db) {
+        sqlite3_close(db);
+        db = NULL;
+    }
 }

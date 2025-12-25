@@ -10,6 +10,5 @@ void db_close(void);
 /* Persistence */
 void db_load_movies(void);
 void db_save_movies(void);
-void db_delete_movie(const char *title);
 
 #endif
