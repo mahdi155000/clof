@@ -12,37 +12,41 @@ void plugin_add(WINDOW *win) {
     int season = 0;
     int episode = 0;
 
+    // Enable echo temporarily for this window
+    echo();
     wprintw(win, "Title: ");
     wrefresh(win);
-    wgetnstr(win, title, sizeof(title)-1);
+    wgetnstr(win, title, sizeof(title) - 1);
     title[strcspn(title, "\n")] = '\0';
 
     if (title[0] == '\0') {
         wprintw(win, "Empty title.\n");
         wrefresh(win);
+        noecho();  // disable echo again
         return;
     }
 
     if (movie_exists(title) != -1) {
         wprintw(win, "Already exists.\n");
         wrefresh(win);
+        noecho();
         return;
     }
 
     wprintw(win, "Is series? (0 = No, 1 = Yes): ");
     wrefresh(win);
-    wgetnstr(win, tmp, sizeof(tmp)-1);
+    wgetnstr(win, tmp, sizeof(tmp) - 1);
     is_series = atoi(tmp);
 
     if (is_series) {
         wprintw(win, "Season: ");
         wrefresh(win);
-        wgetnstr(win, tmp, sizeof(tmp)-1);
+        wgetnstr(win, tmp, sizeof(tmp) - 1);
         season = atoi(tmp);
 
         wprintw(win, "Episode: ");
         wrefresh(win);
-        wgetnstr(win, tmp, sizeof(tmp)-1);
+        wgetnstr(win, tmp, sizeof(tmp) - 1);
         episode = atoi(tmp);
     }
 
@@ -51,7 +55,11 @@ void plugin_add(WINDOW *win) {
 
     wprintw(win, "Added.\n");
     wrefresh(win);
+
+    // Disable echo again after input
+    noecho();
 }
+
 
 // register automatically
 __attribute__((constructor))
