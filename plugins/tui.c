@@ -7,13 +7,21 @@
 #include "../plugin.h"
 
 /* =========================================================
+ * View state
+ * ========================================================= */
+
+static int view_indices[MAX_MOVIES];
+static int view_count = 0;
+
+/* =========================================================
  * Modes
  * ========================================================= */
 
 typedef enum {
     MODE_NORMAL,
     MODE_NUMBER,
-    MODE_COMMAND
+    MODE_COMMAND,
+    MODE_SEARCH,
 } InputMode;
 
 /* =========================================================
@@ -61,25 +69,27 @@ static void draw_screen(int selected, InputMode mode,
 
     int row = 3;
 
-    for (int i = 0; i < movie_count; i++) {
+    for (int i = 0; i < view_count; i++) {
+        Movie *m = &movies[ view_indices[i] ];
+
         wchar_t mark[2] = L" ";
-        if (movies[i].watched)
+        if (m->watched)
             mark[0] = L'\u2714';
         mark[1] = 0;
 
         if (i == selected)
             attron(A_REVERSE);
 
-        if (movies[i].is_series) {
+        if (m->is_series) {
             mvprintw(row, 0, "%2d) [%ls] %-20s S%02dE%02d",
                      i + 1, mark,
-                     movies[i].title,
-                     movies[i].season,
-                     movies[i].episode);
+                     m->title,
+                     m->season,
+                     m->episode);
         } else {
             mvprintw(row, 0, "%2d) [%ls] %-20s (movie)",
                      i + 1, mark,
-                     movies[i].title);
+                     m->title);
         }
 
         if (i == selected)
@@ -146,13 +156,16 @@ static int popup_menu(const char **items, int count)
     }
 }
 
-// ------------- show info function on popup menu --------------------
-static void tui_popup_series_info(int index)
+/* =========================================================
+ * Info popups
+ * ========================================================= */
+
+static void tui_popup_series_info(int movie_index)
 {
     int h = 9, w = 50;
     WINDOW *win = popup_create(h, w, "Series Info");
 
-    Movie *m = &movies[index];
+    Movie *m = &movies[movie_index];
 
     mvwprintw(win, 2, 2, "Title   : %s", m->title);
     mvwprintw(win, 3, 2, "Genre   : %s", m->genre);
@@ -167,12 +180,12 @@ static void tui_popup_series_info(int index)
     popup_close(win);
 }
 
-static void tui_popup_movie_info(int index)
+static void tui_popup_movie_info(int movie_index)
 {
     int h = 8, w = 50;
     WINDOW *win = popup_create(h, w, "Movie Info");
 
-    Movie *m = &movies[index];
+    Movie *m = &movies[movie_index];
 
     mvwprintw(win, 2, 2, "Title   : %s", m->title);
     mvwprintw(win, 3, 2, "Genre   : %s", m->genre);
@@ -186,7 +199,7 @@ static void tui_popup_movie_info(int index)
 }
 
 /* =========================================================
- * Execute command (SAFE)
+ * Commands
  * ========================================================= */
 
 static void execute_command(const char *cmd, char *status, int len)
@@ -194,14 +207,11 @@ static void execute_command(const char *cmd, char *status, int len)
     for (int i = 0; i < plugin_count; i++) {
         if (strcmp(cmd, plugins[i].name) == 0) {
 
-            /* Leave ncurses safely */
             def_prog_mode();
             endwin();
 
-            // plugins[i].func();   // printf / scanf allowed here
             plugins[i].func(stdscr);
 
-            /* Restore ncurses */
             reset_prog_mode();
             refresh();
 
@@ -211,6 +221,17 @@ static void execute_command(const char *cmd, char *status, int len)
     }
 
     snprintf(status, len, "Unknown command: %s", cmd);
+}
+
+/* =========================================================
+ * View rebuild
+ * ========================================================= */
+
+static void rebuild_view(void)
+{
+    view_count = movie_count;
+    for (int i = 0; i < movie_count; i++)
+        view_indices[i] = i;
 }
 
 /* =========================================================
@@ -226,6 +247,8 @@ void plugin_tui(void)
     noecho();
     keypad(stdscr, TRUE);
     curs_set(0);
+
+    rebuild_view();
 
     int ch, selected = 0;
     InputMode mode = MODE_NORMAL;
@@ -248,10 +271,13 @@ void plugin_tui(void)
                 int val = atoi(input);
                 int idx = abs(val) - 1;
 
-                if (idx >= 0 && idx < movie_count) {
+                if (idx >= 0 && idx < view_count) {
+                    int mi = view_indices[idx];
                     selected = idx;
-                    if (val > 0) next_episode(idx);
-                    else prev_episode(idx);
+
+                    if (val > 0) next_episode(mi);
+                    else prev_episode(mi);
+
                     snprintf(status, sizeof(status), "Episode updated");
                 } else {
                     snprintf(status, sizeof(status), "Out of range");
@@ -295,7 +321,7 @@ void plugin_tui(void)
         /* NORMAL MODE */
         if (ch == 'q') break;
         else if (ch == KEY_UP && selected > 0) selected--;
-        else if (ch == KEY_DOWN && selected < movie_count - 1) selected++;
+        else if (ch == KEY_DOWN && selected < view_count - 1) selected++;
         else if (ch == 'n') {
             mode = MODE_NUMBER;
             in_len = 0;
@@ -307,20 +333,22 @@ void plugin_tui(void)
             input[0] = 0;
         }
         else if (ch == '\n') {
-            if (movies[selected].is_series) {
+            int mi = view_indices[selected];
+
+            if (movies[mi].is_series) {
                 int a = popup_menu(series_action_items, SERIES_ACTION_COUNT);
-                if (a == SERIES_ADD) next_episode(selected);
-                else if (a == SERIES_REMOVE) prev_episode(selected);
-                else if (a == SERIES_INFO) tui_popup_series_info(selected);
+                if (a == SERIES_ADD) next_episode(mi);
+                else if (a == SERIES_REMOVE) prev_episode(mi);
+                else if (a == SERIES_INFO) tui_popup_series_info(mi);
             } else {
                 int a = popup_menu(movie_action_items, MOVIE_ACTION_COUNT);
 
                 if (a == MOVIE_MARK_WATCHED) {
-                    movies[selected].watched ^= 1;
+                    movies[mi].watched ^= 1;
                     snprintf(status, sizeof(status), "Watch status toggled");
                 }
                 else if (a == MOVIE_INFO) {
-                    tui_popup_movie_info(selected);
+                    tui_popup_movie_info(mi);
                 }
             }
         }
