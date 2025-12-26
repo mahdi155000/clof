@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
-
+#include "popup.h"
 #include "../movie.h"
 #include "../plugin.h"
 
@@ -146,6 +146,27 @@ static int popup_menu(const char **items, int count)
     }
 }
 
+// ------------- show info function on popup menu --------------------
+static void tui_popup_series_info(int index)
+{
+    int h = 9, w = 50;
+    WINDOW *win = popup_create(h, w, "Series Info");
+
+    Movie *m = &movies[index];
+
+    mvwprintw(win, 2, 2, "Title   : %s", m->title);
+    mvwprintw(win, 3, 2, "Genre   : %s", m->genre);
+    mvwprintw(win, 4, 2, "Season  : %02d", m->season);
+    mvwprintw(win, 5, 2, "Episode : %02d", m->episode);
+    mvwprintw(win, 6, 2, "Watched : %s", m->watched ? "YES" : "NO");
+
+    mvwprintw(win, h - 2, 2, "Press any key to close");
+    wrefresh(win);
+
+    wgetch(win);
+    popup_close(win);
+}
+
 /* =========================================================
  * Execute command (SAFE)
  * ========================================================= */
@@ -272,6 +293,7 @@ void plugin_tui(void)
                 int a = popup_menu(series_action_items, SERIES_ACTION_COUNT);
                 if (a == SERIES_ADD) next_episode(selected);
                 else if (a == SERIES_REMOVE) prev_episode(selected);
+                else if (a == SERIES_INFO) tui_popup_series_info(selected);
             } else {
                 int a = popup_menu(movie_action_items, MOVIE_ACTION_COUNT);
                 if (a == MOVIE_MARK_WATCHED)
