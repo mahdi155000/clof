@@ -167,6 +167,24 @@ static void tui_popup_series_info(int index)
     popup_close(win);
 }
 
+static void tui_popup_movie_info(int index)
+{
+    int h = 8, w = 50;
+    WINDOW *win = popup_create(h, w, "Movie Info");
+
+    Movie *m = &movies[index];
+
+    mvwprintw(win, 2, 2, "Title   : %s", m->title);
+    mvwprintw(win, 3, 2, "Genre   : %s", m->genre);
+    mvwprintw(win, 4, 2, "Watched : %s", m->watched ? "YES" : "NO");
+
+    mvwprintw(win, h - 2, 2, "Press any key to close");
+    wrefresh(win);
+
+    wgetch(win);
+    popup_close(win);
+}
+
 /* =========================================================
  * Execute command (SAFE)
  * ========================================================= */
@@ -296,8 +314,14 @@ void plugin_tui(void)
                 else if (a == SERIES_INFO) tui_popup_series_info(selected);
             } else {
                 int a = popup_menu(movie_action_items, MOVIE_ACTION_COUNT);
-                if (a == MOVIE_MARK_WATCHED)
+
+                if (a == MOVIE_MARK_WATCHED) {
                     movies[selected].watched ^= 1;
+                    snprintf(status, sizeof(status), "Watch status toggled");
+                }
+                else if (a == MOVIE_INFO) {
+                    tui_popup_movie_info(selected);
+                }
             }
         }
     }
