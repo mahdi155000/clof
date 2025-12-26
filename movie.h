@@ -32,7 +32,7 @@ void save_movies(void);
 
 
 int movie_exists(const char *title);  // return index or -1
-void add_movie(const char *title, int is_series, int season, int episode);
+void add_movie(const char *title, const char *genre, int is_series, int season, int episode);
 void remove_movie(int index);
 
 // progress controll

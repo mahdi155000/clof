@@ -45,6 +45,14 @@ void plugin_add(WINDOW *parent)
         goto done;
     }
 
+    char genre[GENRE_LEN] = "";
+    wmove(win, 3, 2);
+    wprintw(win,"Genre (optional): ");
+    wrefresh(win);
+    wgetnstr(win, genre, GENRE_LEN - 1);
+    /* remove trailing newline safety */
+    genre[GENRE_LEN - 1] = '\0';
+
     mvwprintw(win, 5, 2, "Is series (0/1):");
     wrefresh(win);
     mvwgetnstr(win, 5, 22, buf, sizeof(buf) - 1);
@@ -62,7 +70,7 @@ void plugin_add(WINDOW *parent)
         episode = atoi(buf);
     }
 
-    add_movie(title, is_series, season, episode);
+    add_movie(title, genre, is_series, season, episode);
     movies[movie_count - 1].watched = 0;
 
     mvwprintw(win, h - 2, 2, "Added successfully");

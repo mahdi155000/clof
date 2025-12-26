@@ -39,14 +39,20 @@ void prev_episode(int index) {
         movies[index].episode--;
 }
 
-void add_movie(const char *title, int is_series, int season, int episode) {
+void add_movie(const char *title, const char *genre, int is_series, int season, int episode) {
     if (movie_count >= MAX_MOVIES)
         return;
 
     strncpy(movies[movie_count].title, title, TITLE_LEN - 1);
     movies[movie_count].title[TITLE_LEN - 1] = '\0';
 
-    strcpy(movies[movie_count].genre, "");
+    // strcpy(movies[movie_count].genre, "");
+    if (genre && genre[0] != '\0') {
+        strncpy(movies[movie_count].genre, genre, GENRE_LEN - 1);
+        movies[movie_count].genre[GENRE_LEN - 1] = '\0';
+    } else {
+        movies[movie_count].genre[0] = '\0';  // clean empty string
+    }
 
     movies[movie_count].is_series = is_series;
     movies[movie_count].season = season;
